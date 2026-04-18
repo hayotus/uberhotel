@@ -138,6 +138,20 @@
   .type-badge { font-size: 10px; color: var(--text3); background: var(--surface2); border-radius: 4px; padding: 1px 5px; }
   .addr { font-size: 11px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 
+  .item-actions { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+  .go-btn {
+    display: flex; align-items: center; gap: 4px;
+    background: #16a34a; color: #fff;
+    border: none; border-radius: 20px;
+    padding: 5px 10px; font-size: 12px; font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer; text-decoration: none;
+    transition: background 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .go-btn:hover { background: #15803d; }
+  .go-btn:active { transform: scale(0.93); }
+
   .cb {
     width: 20px; height: 20px; border-radius: 5px;
     border: 1.5px solid var(--border2); background: var(--surface);
@@ -304,8 +318,15 @@ function renderList(query='') {
         </div>
         ${h.addr ? `<div class="addr">${h.addr}</div>` : ''}
       </div>
-      <input type="checkbox" class="cb" ${isActive?'checked':''}>
+      <div class="item-actions">
+        <a class="go-btn" href="https://www.google.com/maps/dir/?api=1&destination=${h.lat},${h.lng}" target="_blank" title="Google Maps'da yo'nalish">
+          <svg width="11" height="11" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5" fill="#fff" stroke="none"/></svg>
+          Go
+        </a>
+        <input type="checkbox" class="cb" ${isActive?'checked':''}>
+      </div>
     `;
+    item.querySelector('.go-btn').addEventListener('click', e => e.stopPropagation());
     item.querySelector('.cb').addEventListener('change', e => {
       e.stopPropagation();
       if (e.target.checked) { activeSet.add(h.id); map.flyTo([h.lat,h.lng],17,{duration:0.8}); showToast(h.name+' belgilandi'); }
