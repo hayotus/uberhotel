@@ -2,153 +2,223 @@
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>UberHotel Menu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Uber Parallel Progress</title>
     <style>
-        * {
+        body {
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
-        }
-
-        body {
-            background: radial-gradient(circle at top right, #2c5364, #203a43, #0f2027);
-            height: 100vh;
             display: flex;
-            align-items: center;
             justify-content: center;
-            overflow: hidden;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #000000;
+            font-family: -apple-system, sans-serif;
             color: white;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        /* Orqa fondagi suzuvchi pufakchalar */
-        .background-animate {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-        }
-
-        .circle {
-            position: absolute;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 50%;
-            animation: float Up 20s infinite ease-in-out;
-        }
-
-        @keyframes floatUp {
-            0% { transform: translateY(110vh) scale(0.5); opacity: 0; }
-            50% { opacity: 0.3; }
-            100% { transform: translateY(-20vh) scale(1.2); opacity: 0; }
+            overflow: hidden;
         }
 
         .container {
-            width: 88%;
-            max-width: 380px;
-            padding: 40px 20px;
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            border-radius: 40px;
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            box-shadow: 0 40px 80px rgba(0,0,0,0.4);
-            text-align: center;
-            animation: entrance 1s cubic-bezier(0.23, 1, 0.32, 1);
-        }
-
-        @keyframes entrance {
-            from { opacity: 0; transform: scale(0.8) translateY(30px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-
-        h1 {
-            font-weight: 200;
-            font-size: 32px;
-            letter-spacing: 6px;
-            margin-bottom: 35px;
-            text-transform: uppercase;
-        }
-
-        .menu-btn {
+            width: 90%;
+            max-width: 400px;
             display: flex;
+            flex-direction: column;
             align-items: center;
+        }
+
+        /* Aylana progress */
+        .circle-box {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            display: flex;
             justify-content: center;
-            gap: 12px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .progress-ring {
+            position: absolute;
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring__circle {
+            stroke: #FFFFFF;
+            stroke-width: 6;
+            fill: transparent;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.1s linear;
+        }
+
+        .uber-logo {
+            width: 70px;
+            fill: white;
+            z-index: 10;
+        }
+
+        /* Foiz matni */
+        #percent-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+
+        /* Gorizontal progress bar */
+        .horizontal-bar-container {
             width: 100%;
-            padding: 18px;
-            margin: 15px 0;
-            text-decoration: none;
+            height: 6px;
+            background: #222;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 40px;
+        }
+
+        #horizontal-fill {
+            height: 100%;
+            width: 0%;
+            background: #28a745; /* Gorizontal bar yashil rangda */
+            transition: width 0.1s linear;
+        }
+
+        /* Xabarlar logi */
+        .log-container {
+            width: 100%;
+            height: 180px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            font-size: 0.85rem;
+            color: #888;
+            border-top: 1px solid #111;
+            padding-top: 15px;
+        }
+
+        .log-item {
+            display: flex;
+            justify-content: space-between;
+            animation: fadeIn 0.3s forwards;
+        }
+
+        .check { color: #28a745; }
+
+        /* Yakuniy tugma */
+        #complete-btn {
+            display: none;
+            width: 100%;
+            padding: 15px;
+            background: #28a745;
             color: white;
-            font-size: 17px;
-            font-weight: 400;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 22px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 20px;
         }
 
-        /* iPhoneda bosish effekti */
-        .menu-btn:active {
-            transform: scale(0.94);
-            background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.4);
+        #final-msg {
+            display: none;
+            text-align: center;
         }
 
-        /* Tugmalarning chiqib kelishi */
-        .btn-1 { animation: slide 0.7s both 0.3s; }
-        .btn-2 { animation: slide 0.7s both 0.5s; }
-        .btn-3 { animation: slide 0.7s both 0.7s; }
-
-        @keyframes slide {
-            from { opacity: 0; transform: translateY(20px); }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
             to { opacity: 1; transform: translateY(0); }
-        }
-
-        .icon {
-            font-size: 20px;
         }
     </style>
 </head>
 <body>
 
-    <div class="background-animate" id="circles"></div>
+    <div class="container" id="main-ui">
+        <div class="circle-box">
+            <svg class="progress-ring" width="180" height="180">
+                <circle cx="90" cy="90" r="85" stroke="#222" stroke-width="6" fill="transparent"/>
+                <circle id="circle-progress" class="progress-ring__circle" cx="90" cy="90" r="85"/>
+            </svg>
+            <svg class="uber-logo" viewBox="0 0 244.75 84.81">
+                <path d="M244.75 42.41c0 23.42-19 42.4-42.41 42.4s-42.41-19-42.41-42.4S178.93 0 202.34 0s42.41 18.99 42.41 42.41zm-68.51 0c0 14.39 11.68 26.11 26.1 26.11S228.44 56.8 228.44 42.41 216.76 16.3 202.34 16.3s-26.1 11.72-26.1 26.11zM149.33 58.71V1.82h16.3v79.4h-16.3v-5.69a26.1 26.1 0 0 1-21.57 9.28c-14.42 0-26.1-11.72-26.1-26.11S113.34 22.6 127.76 22.6a26 26 0 0 1 21.57 10.02zm-31.27-16.3c0 14.39 11.68 26.11 26.1 26.11s26.11-11.72 26.11-26.11S158.6 16.3 144.17 16.3s-26.1 11.72-26.1 26.11zM74.19 1.82h16.3V81.2H74.19v-5.69a26.11 26.11 0 0 1-21.57 9.3c-14.42 0-26.11-11.72-26.11-26.11S38.2 22.6 52.62 22.6a26.1 26.1 0 0 1 21.57 10.02zm-31.27 16.3c0 14.39 11.68 26.11 26.1 26.11s26.11-11.72 26.11-26.11S83.45 16.3 69 16.3s-26.1 11.72-26.11 26.11zM0 1.82h16.3V81.2H0z"/>
+            </svg>
+        </div>
 
-    <div class="container">
-        <h1>UberHotel</h1>
-        
-        <a href="https://hayotus.github.io/uberhotel/calc.html" class="menu-btn btn-1">
-            <span class="icon">🧮</span> Calculator
-        </a>
-        
-        <a href="https://hayotus.github.io/uberhotel/hotel.html" class="menu-btn btn-2">
-            <span class="icon">🏨</span> Hotel
-        </a>
-        
-        <a href="https://hayotus.github.io/uberhotel/test.html" class="menu-btn btn-3">
-            <span class="icon">📝</span> Test
-        </a>
+        <div id="percent-display">0%</div>
+
+        <div class="horizontal-bar-container">
+            <div id="horizontal-fill"></div>
+        </div>
+
+        <div class="log-container" id="logs"></div>
+
+        <button id="complete-btn">Completed</button>
+    </div>
+
+    <div id="final-msg">
+        <h1 style="color:#28a745">✓</h1>
+        <h2>Rahmat!</h2>
+        <p>Jarayon muvaffaqiyatli yakunlandi.</p>
     </div>
 
     <script>
-        const circlesContainer = document.getElementById('circles');
-        function createCircle() {
-            const circle = document.createElement('div');
-            circle.className = 'circle';
-            const size = Math.random() * 60 + 15 + 'px';
-            circle.style.width = size;
-            circle.style.height = size;
-            circle.style.left = Math.random() * 100 + '%';
-            circle.style.bottom = "-100px";
-            circle.style.animationDuration = Math.random() * 10 + 10 + 's';
-            circle.style.animationDelay = Math.random() * 5 + 's';
-            circlesContainer.appendChild(circle);
-        }
+        const circle = document.getElementById('circle-progress');
+        const horizontal = document.getElementById('horizontal-fill');
+        const percentText = document.getElementById('percent-display');
+        const logs = document.getElementById('logs');
+        const btn = document.getElementById('complete-btn');
         
-        for (let i = 0; i < 15; i++) {
-            createCircle();
-        }
+        const radius = circle.r.baseVal.value;
+        const circumference = 2 * Math.PI * radius;
+        circle.style.strokeDasharray = `${circumference} ${circumference}`;
+        circle.style.strokeDashoffset = circumference;
+
+        const messages = [
+            "Uber bazasiga ulanish...",
+            "Shaxsiy ma'lumotlar tekshirilmoqda...",
+            "Safar hujjatlari ko'chirilmoqda...",
+            "Analiz jarayoni boshlandi...",
+            "GPS nuqtalari yuklanmoqda...",
+            "Tranzaksiyalar sinxronlanmoqda...",
+            "Reyting tizimi yangilanmoqda...",
+            "Xavfsizlik protokoli faol...",
+            "Bulutli saqlashga yozilmoqda...",
+            "Yakuniy tekshiruv..."
+        ];
+
+        let progress = 0;
+        let taskIndex = 0;
+
+        const interval = setInterval(() => {
+            progress += 1;
+            
+            // 1. Matnni yangilash
+            percentText.textContent = progress + "%";
+
+            // 2. Aylana progress
+            const offset = circumference - (progress / 100 * circumference);
+            circle.style.strokeDashoffset = offset;
+
+            // 3. Gorizontal progress
+            horizontal.style.width = progress + "%";
+
+            // 4. Xabarlarni chiqarish (har 10% da bittadan)
+            if (progress % 10 === 0 && taskIndex < messages.length) {
+                const item = document.createElement('div');
+                item.className = 'log-item';
+                item.innerHTML = `<span>${messages[taskIndex]}</span><span class="check">✓</span>`;
+                logs.appendChild(item);
+                logs.scrollTop = logs.scrollHeight;
+                taskIndex++;
+            }
+
+            if (progress >= 100) {
+                clearInterval(interval);
+                btn.style.display = 'block';
+            }
+        }, 100); // Jami 10 soniya atrofida davom etadi
+
+        btn.addEventListener('click', () => {
+            document.getElementById('main-ui').style.display = 'none';
+            document.getElementById('final-msg').style.display = 'block';
+        });
     </script>
 </body>
 </html>
