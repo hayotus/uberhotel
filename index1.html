@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>iPhone Kalkulyator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #000;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 0 0 24px 0;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .display {
+      color: #fff;
+      font-size: clamp(48px, 12vw, 80px);
+      font-weight: 200;
+      text-align: right;
+      padding: 0 24px 12px;
+      line-height: 1.1;
+      word-break: break-all;
+      min-height: 110px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-end;
+    }
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      padding: 0 16px;
+    }
+    .btn {
+      aspect-ratio: 1;
+      border-radius: 50%;
+      border: none;
+      font-size: clamp(22px, 6vw, 32px);
+      font-weight: 400;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+      transition: filter 0.1s;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .btn:active { filter: brightness(1.4); }
+    .num  { background: #333; color: #fff; }
+    .op   { background: #ff9f0a; color: #fff; }
+    .spec { background: #a5a5a5; color: #000; }
+    .op.active-op { background: #fff; color: #ff9f0a; }
+    .zero {
+      grid-column: span 2;
+      border-radius: 999px;
+      aspect-ratio: unset;
+      padding-left: 28px;
+      justify-content: flex-start;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="display" id="disp">0</div>
+  <div class="buttons">
+    <button class="btn spec" id="ac">AC</button>
+    <button class="btn spec" id="plusminus">+/−</button>
+    <button class="btn spec" id="pct">%</button>
+    <button class="btn op" data-op="/">÷</button>
+
+    <button class="btn num" data-num="7">7</button>
+    <button class="btn num" data-num="8">8</button>
+    <button class="btn num" data-num="9">9</button>
+    <button class="btn op" data-op="*">×</button>
+
+    <button class="btn num" data-num="4">4</button>
+    <button class="btn num" data-num="5">5</button>
+    <button class="btn num" data-num="6">6</button>
+    <button class="btn op" data-op="-">−</button>
+
+    <button class="btn num" data-num="1">1</button>
+    <button class="btn num" data-num="2">2</button>
+    <button class="btn num" data-num="3">3</button>
+    <button class="btn op" data-op="+">+</button>
+
+    <button class="btn num zero" data-num="0">0</button>
+    <button class="btn num" data-num=".">.</button>
+    <button class="btn op" id="eq">=</button>
+  </div>
+
+  <script>
+    const disp = document.getElementById('disp');
+    let current = '0', prev = '', operator = null, justCalc = false, waitingForOperand = false;
+
+    function setDisplay(val) {
+      let s = String(val);
+      if (s.length > 12) {
+        let n = parseFloat(s);
+        s = n.toPrecision(9).replace(/\.?0+$/, '');
+      }
+      disp.textContent = s;
+      current = s;
+    }
+
+    function updateAC() {
+      document.getElementById('ac').textContent = (current === '0' && !prev) ? 'AC' : 'C';
+    }
+
+    document.querySelectorAll('[data-num]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        let v = btn.dataset.num;
+        if (waitingForOperand) { current = v === '.' ? '0.' : v; waitingForOperand = false; }
+        else if (justCalc) { current = v === '.' ? '0.' : v; justCalc = false; }
+        else {
+          if (v === '.' && current.includes('.')) return;
+          current = current === '0' && v !== '.' ? v : current + v;
+        }
+        setDisplay(current);
+        updateAC();
+      });
+    });
+
+    document.querySelectorAll('[data-op]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        let op = btn.dataset.op;
+        document.querySelectorAll('[data-op]').forEach(b => b.classList.remove('active-op'));
+        btn.classList.add('active-op');
+        if (prev && operator && !waitingForOperand) {
+          let res = calc(parseFloat(prev), parseFloat(current), operator);
+          setDisplay(res); prev = String(res);
+        } else { prev = current; }
+        operator = op;
+        waitingForOperand = true;
+        justCalc = false;
+        updateAC();
+      });
+    });
+
+    document.getElementById('eq').addEventListener('click', () => {
+      document.querySelectorAll('[data-op]').forEach(b => b.classList.remove('active-op'));
+      if (!operator || !prev) return;
+      let res = calc(parseFloat(prev), parseFloat(current), operator);
+      setDisplay(res);
+      prev = ''; operator = null; justCalc = true; waitingForOperand = false;
+      updateAC();
+    });
+
+    document.getElementById('ac').addEventListener('click', () => {
+      if (document.getElementById('ac').textContent === 'C') {
+        current = '0'; setDisplay('0');
+      } else {
+        current = '0'; prev = ''; operator = null; justCalc = false; waitingForOperand = false;
+        setDisplay('0');
+      }
+      document.querySelectorAll('[data-op]').forEach(b => b.classList.remove('active-op'));
+      updateAC();
+    });
+
+    document.getElementById('plusminus').addEventListener('click', () => {
+      let n = parseFloat(current) * -1;
+      setDisplay(n); updateAC();
+    });
+
+    document.getElementById('pct').addEventListener('click', () => {
+      let n = parseFloat(current) / 100;
+      setDisplay(n); updateAC();
+    });
+
+    function calc(a, b, op) {
+      let r;
+      if (op === '+') r = a + b;
+      else if (op === '-') r = a - b;
+      else if (op === '*') r = a * b;
+      else if (op === '/') r = b === 0 ? 'Xato' : a / b;
+      if (typeof r === 'number') r = parseFloat(r.toPrecision(12));
+      return r;
+    }
+  </script>
+
+</body>
+</html>
