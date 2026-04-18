@@ -2,38 +2,125 @@
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Salom World</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>iPhone Kalkulyator</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #000;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-end;
             height: 100vh;
             margin: 0;
-            background-color: #f0f2f5;
+            padding-bottom: 30px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
-        .card {
-            background: white;
-            padding: 2rem;
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            text-align: center;
+        .calculator {
+            width: 90%;
+            max-width: 350px;
         }
-        h1 {
-            color: #2ea44f;
+        .display {
+            color: white;
+            font-size: 70px;
+            text-align: right;
+            padding: 20px;
             margin-bottom: 10px;
+            overflow: hidden;
         }
-        p {
-            color: #57606a;
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        button {
+            height: 75px;
+            width: 75px;
+            border-radius: 50%;
+            border: none;
+            font-size: 30px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        button:active {
+            opacity: 0.7;
+        }
+        .number { background-color: #333; color: white; }
+        .operator { background-color: #ff9f0a; color: white; }
+        .special { background-color: #a5a5a5; color: black; }
+        .zero {
+            grid-column: span 2;
+            width: 100%;
+            border-radius: 40px;
+            text-align: left;
+            padding-left: 30px;
         }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>Salom, World!</h1>
-        <p>Ushbu sayt iPhone orqali noldan yozildi va GitHub-ga yuklandi.</p>
+
+<div class="calculator">
+    <div class="display" id="display">0</div>
+    <div class="buttons">
+        <button class="special" onclick="clearDisplay()">AC</button>
+        <button class="special" onclick="deleteLast()">C</button>
+        <button class="special" onclick="appendToDisplay('%')">%</button>
+        <button class="operator" onclick="appendToDisplay('/')">÷</button>
+        
+        <button class="number" onclick="appendToDisplay('7')">7</button>
+        <button class="number" onclick="appendToDisplay('8')">8</button>
+        <button class="number" onclick="appendToDisplay('9')">9</button>
+        <button class="operator" onclick="appendToDisplay('*')">×</button>
+        
+        <button class="number" onclick="appendToDisplay('4')">4</button>
+        <button class="number" onclick="appendToDisplay('5')">5</button>
+        <button class="number" onclick="appendToDisplay('6')">6</button>
+        <button class="operator" onclick="appendToDisplay('-')">−</button>
+        
+        <button class="number" onclick="appendToDisplay('1')">1</button>
+        <button class="number" onclick="appendToDisplay('2')">2</button>
+        <button class="number" onclick="appendToDisplay('3')">3</button>
+        <button class="operator" onclick="appendToDisplay('+')">+</button>
+        
+        <button class="number zero" onclick="appendToDisplay('0')">0</button>
+        <button class="number" onclick="appendToDisplay('.')">.</button>
+        <button class="operator" onclick="calculate()">=</button>
     </div>
+</div>
+
+<script>
+    let display = document.getElementById('display');
+
+    function appendToDisplay(value) {
+        if (display.innerText === '0' && value !== '.') {
+            display.innerText = value;
+        } else {
+            display.innerText += value;
+        }
+    }
+
+    function clearDisplay() {
+        display.innerText = '0';
+    }
+
+    function deleteLast() {
+        if (display.innerText.length > 1) {
+            display.innerText = display.innerText.slice(0, -1);
+        } else {
+            display.innerText = '0';
+        }
+    }
+
+    function calculate() {
+        try {
+            // Xatoliklarni oldini olish uchun eval ishlatamiz
+            display.innerText = eval(display.innerText.replace('÷', '/').replace('×', '*'));
+        } catch {
+            display.innerText = 'Xato';
+            setTimeout(clearDisplay, 1500);
+        }
+    }
+</script>
+
 </body>
 </html>
