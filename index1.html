@@ -1,184 +1,126 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>iPhone Kalkulyator</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: #000;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      padding: 0 0 24px 0;
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-    .display {
-      color: #fff;
-      font-size: clamp(48px, 12vw, 80px);
-      font-weight: 200;
-      text-align: right;
-      padding: 0 24px 12px;
-      line-height: 1.1;
-      word-break: break-all;
-      min-height: 110px;
-      display: flex;
-      align-items: flex-end;
-      justify-content: flex-end;
-    }
-    .buttons {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-      padding: 0 16px;
-    }
-    .btn {
-      aspect-ratio: 1;
-      border-radius: 50%;
-      border: none;
-      font-size: clamp(22px, 6vw, 32px);
-      font-weight: 400;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      -webkit-tap-highlight-color: transparent;
-      transition: filter 0.1s;
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-    .btn:active { filter: brightness(1.4); }
-    .num  { background: #333; color: #fff; }
-    .op   { background: #ff9f0a; color: #fff; }
-    .spec { background: #a5a5a5; color: #000; }
-    .op.active-op { background: #fff; color: #ff9f0a; }
-    .zero {
-      grid-column: span 2;
-      border-radius: 999px;
-      aspect-ratio: unset;
-      padding-left: 28px;
-      justify-content: flex-start;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>iPhone Kalkulyator</title>
+    <style>
+        body {
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            height: 100vh;
+            margin: 0;
+            padding-bottom: 30px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        .calculator {
+            width: 90%;
+            max-width: 350px;
+        }
+        .display {
+            color: white;
+            font-size: 70px;
+            text-align: right;
+            padding: 20px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        button {
+            height: 75px;
+            width: 75px;
+            border-radius: 50%;
+            border: none;
+            font-size: 30px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        button:active {
+            opacity: 0.7;
+        }
+        .number { background-color: #333; color: white; }
+        .operator { background-color: #ff9f0a; color: white; }
+        .special { background-color: #a5a5a5; color: black; }
+        .zero {
+            grid-column: span 2;
+            width: 100%;
+            border-radius: 40px;
+            text-align: left;
+            padding-left: 30px;
+        }
+    </style>
 </head>
 <body>
 
-  <div class="display" id="disp">0</div>
-  <div class="buttons">
-    <button class="btn spec" id="ac">AC</button>
-    <button class="btn spec" id="plusminus">+/−</button>
-    <button class="btn spec" id="pct">%</button>
-    <button class="btn op" data-op="/">÷</button>
+<div class="calculator">
+    <div class="display" id="display">0</div>
+    <div class="buttons">
+        <button class="special" onclick="clearDisplay()">AC</button>
+        <button class="special" onclick="deleteLast()">C</button>
+        <button class="special" onclick="appendToDisplay('%')">%</button>
+        <button class="operator" onclick="appendToDisplay('/')">÷</button>
+        
+        <button class="number" onclick="appendToDisplay('7')">7</button>
+        <button class="number" onclick="appendToDisplay('8')">8</button>
+        <button class="number" onclick="appendToDisplay('9')">9</button>
+        <button class="operator" onclick="appendToDisplay('*')">×</button>
+        
+        <button class="number" onclick="appendToDisplay('4')">4</button>
+        <button class="number" onclick="appendToDisplay('5')">5</button>
+        <button class="number" onclick="appendToDisplay('6')">6</button>
+        <button class="operator" onclick="appendToDisplay('-')">−</button>
+        
+        <button class="number" onclick="appendToDisplay('1')">1</button>
+        <button class="number" onclick="appendToDisplay('2')">2</button>
+        <button class="number" onclick="appendToDisplay('3')">3</button>
+        <button class="operator" onclick="appendToDisplay('+')">+</button>
+        
+        <button class="number zero" onclick="appendToDisplay('0')">0</button>
+        <button class="number" onclick="appendToDisplay('.')">.</button>
+        <button class="operator" onclick="calculate()">=</button>
+    </div>
+</div>
 
-    <button class="btn num" data-num="7">7</button>
-    <button class="btn num" data-num="8">8</button>
-    <button class="btn num" data-num="9">9</button>
-    <button class="btn op" data-op="*">×</button>
+<script>
+    let display = document.getElementById('display');
 
-    <button class="btn num" data-num="4">4</button>
-    <button class="btn num" data-num="5">5</button>
-    <button class="btn num" data-num="6">6</button>
-    <button class="btn op" data-op="-">−</button>
-
-    <button class="btn num" data-num="1">1</button>
-    <button class="btn num" data-num="2">2</button>
-    <button class="btn num" data-num="3">3</button>
-    <button class="btn op" data-op="+">+</button>
-
-    <button class="btn num zero" data-num="0">0</button>
-    <button class="btn num" data-num=".">.</button>
-    <button class="btn op" id="eq">=</button>
-  </div>
-
-  <script>
-    const disp = document.getElementById('disp');
-    let current = '0', prev = '', operator = null, justCalc = false, waitingForOperand = false;
-
-    function setDisplay(val) {
-      let s = String(val);
-      if (s.length > 12) {
-        let n = parseFloat(s);
-        s = n.toPrecision(9).replace(/\.?0+$/, '');
-      }
-      disp.textContent = s;
-      current = s;
-    }
-
-    function updateAC() {
-      document.getElementById('ac').textContent = (current === '0' && !prev) ? 'AC' : 'C';
-    }
-
-    document.querySelectorAll('[data-num]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        let v = btn.dataset.num;
-        if (waitingForOperand) { current = v === '.' ? '0.' : v; waitingForOperand = false; }
-        else if (justCalc) { current = v === '.' ? '0.' : v; justCalc = false; }
-        else {
-          if (v === '.' && current.includes('.')) return;
-          current = current === '0' && v !== '.' ? v : current + v;
+    function appendToDisplay(value) {
+        if (display.innerText === '0' && value !== '.') {
+            display.innerText = value;
+        } else {
+            display.innerText += value;
         }
-        setDisplay(current);
-        updateAC();
-      });
-    });
-
-    document.querySelectorAll('[data-op]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        let op = btn.dataset.op;
-        document.querySelectorAll('[data-op]').forEach(b => b.classList.remove('active-op'));
-        btn.classList.add('active-op');
-        if (prev && operator && !waitingForOperand) {
-          let res = calc(parseFloat(prev), parseFloat(current), operator);
-          setDisplay(res); prev = String(res);
-        } else { prev = current; }
-        operator = op;
-        waitingForOperand = true;
-        justCalc = false;
-        updateAC();
-      });
-    });
-
-    document.getElementById('eq').addEventListener('click', () => {
-      document.querySelectorAll('[data-op]').forEach(b => b.classList.remove('active-op'));
-      if (!operator || !prev) return;
-      let res = calc(parseFloat(prev), parseFloat(current), operator);
-      setDisplay(res);
-      prev = ''; operator = null; justCalc = true; waitingForOperand = false;
-      updateAC();
-    });
-
-    document.getElementById('ac').addEventListener('click', () => {
-      if (document.getElementById('ac').textContent === 'C') {
-        current = '0'; setDisplay('0');
-      } else {
-        current = '0'; prev = ''; operator = null; justCalc = false; waitingForOperand = false;
-        setDisplay('0');
-      }
-      document.querySelectorAll('[data-op]').forEach(b => b.classList.remove('active-op'));
-      updateAC();
-    });
-
-    document.getElementById('plusminus').addEventListener('click', () => {
-      let n = parseFloat(current) * -1;
-      setDisplay(n); updateAC();
-    });
-
-    document.getElementById('pct').addEventListener('click', () => {
-      let n = parseFloat(current) / 100;
-      setDisplay(n); updateAC();
-    });
-
-    function calc(a, b, op) {
-      let r;
-      if (op === '+') r = a + b;
-      else if (op === '-') r = a - b;
-      else if (op === '*') r = a * b;
-      else if (op === '/') r = b === 0 ? 'Xato' : a / b;
-      if (typeof r === 'number') r = parseFloat(r.toPrecision(12));
-      return r;
     }
-  </script>
+
+    function clearDisplay() {
+        display.innerText = '0';
+    }
+
+    function deleteLast() {
+        if (display.innerText.length > 1) {
+            display.innerText = display.innerText.slice(0, -1);
+        } else {
+            display.innerText = '0';
+        }
+    }
+
+    function calculate() {
+        try {
+            // Xatoliklarni oldini olish uchun eval ishlatamiz
+            display.innerText = eval(display.innerText.replace('÷', '/').replace('×', '*'));
+        } catch {
+            display.innerText = 'Xato';
+            setTimeout(clearDisplay, 1500);
+        }
+    }
+</script>
 
 </body>
 </html>
