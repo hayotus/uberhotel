@@ -1,184 +1,615 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>iPhone Kalkulyator</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: #000;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      padding: 0 0 24px 0;
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-    .display {
-      color: #fff;
-      font-size: clamp(48px, 12vw, 80px);
-      font-weight: 200;
-      text-align: right;
-      padding: 0 24px 12px;
-      line-height: 1.1;
-      word-break: break-all;
-      min-height: 110px;
-      display: flex;
-      align-items: flex-end;
-      justify-content: flex-end;
-    }
-    .buttons {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-      padding: 0 16px;
-    }
-    .btn {
-      aspect-ratio: 1;
-      border-radius: 50%;
-      border: none;
-      font-size: clamp(22px, 6vw, 32px);
-      font-weight: 400;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      -webkit-tap-highlight-color: transparent;
-      transition: filter 0.1s;
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-    .btn:active { filter: brightness(1.4); }
-    .num  { background: #333; color: #fff; }
-    .op   { background: #ff9f0a; color: #fff; }
-    .spec { background: #a5a5a5; color: #000; }
-    .op.active-op { background: #fff; color: #ff9f0a; }
-    .zero {
-      grid-column: span 2;
-      border-radius: 999px;
-      aspect-ratio: unset;
-      padding-left: 28px;
-      justify-content: flex-start;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mehmonxona Qidirish</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f2ed;
+    --surface: #ffffff;
+    --surface2: #f0ece5;
+    --accent: #2563eb;
+    --accent-light: #eff6ff;
+    --text: #1a1814;
+    --text2: #6b6560;
+    --text3: #a09b94;
+    --border: rgba(0,0,0,0.08);
+    --border2: rgba(0,0,0,0.14);
+    --shadow: 0 2px 16px rgba(0,0,0,0.08);
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+  }
+
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    background: var(--surface);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* HEADER */
+  #header {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    z-index: 1000;
+    padding: 14px 16px 0;
+    pointer-events: none;
+  }
+
+  .search-bar {
+    background: var(--surface);
+    border-radius: 50px;
+    box-shadow: var(--shadow), 0 0 0 1px var(--border);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    pointer-events: all;
+  }
+
+  .search-bar svg { flex-shrink: 0; color: var(--text3); }
+
+  .search-bar input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    color: var(--text);
+    width: 100%;
+  }
+
+  .search-bar input::placeholder { color: var(--text3); }
+
+  .loc-btn {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    pointer-events: all;
+    transition: transform 0.15s;
+  }
+  .loc-btn:active { transform: scale(0.93); }
+
+  /* MAP */
+  #map-section {
+    flex: 0 0 52%;
+    position: relative;
+  }
+
+  #map {
+    width: 100%;
+    height: 100%;
+  }
+
+  .leaflet-container {
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  /* Custom marker */
+  .hotel-marker {
+    background: var(--surface);
+    border: 2px solid rgba(0,0,0,0.12);
+    border-radius: 50px;
+    padding: 4px 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .hotel-marker.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(37,99,235,0.4);
+  }
+
+  .user-marker-inner {
+    width: 16px; height: 16px;
+    background: var(--accent);
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.25);
+  }
+
+  /* DIVIDER */
+  #divider {
+    height: 1px;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+
+  /* LIST */
+  #list-section {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--surface);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #list-section::-webkit-scrollbar { width: 0; }
+
+  .list-header {
+    padding: 14px 16px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0;
+    background: var(--surface);
+    z-index: 5;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .list-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .active-pill {
+    background: var(--accent);
+    color: #fff;
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    display: none;
+  }
+
+  .hotel-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.1s;
+    position: relative;
+  }
+
+  .hotel-item:hover { background: var(--surface2); }
+  .hotel-item.highlighted { background: var(--accent-light); }
+  .hotel-item:active { background: #e0eaff; }
+
+  .hotel-icon {
+    width: 44px; height: 44px;
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+  }
+
+  .hotel-info { flex: 1; min-width: 0; }
+
+  .hotel-name {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .hotel-sub {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 3px;
+    flex-wrap: wrap;
+  }
+
+  .stars { color: #d97706; font-size: 11px; letter-spacing: 1px; }
+
+  .badge {
+    background: var(--surface2);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 11px;
+    color: var(--text2);
+    font-weight: 500;
+  }
+
+  .dist {
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  .price {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  /* Checkbox */
+  .cb-wrap {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cb {
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    border: 1.5px solid var(--border2);
+    background: var(--surface);
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .cb:checked {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .cb:checked::after {
+    content: '';
+    position: absolute;
+    left: 6px; top: 3px;
+    width: 7px; height: 11px;
+    border: 2px solid #fff;
+    border-left: none; border-top: none;
+    transform: rotate(45deg);
+  }
+
+  /* Toast */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: rgba(20,20,20,0.9);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 9999;
+    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
+    white-space: nowrap;
+    max-width: 90%;
+    text-align: center;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* Leaflet overrides */
+  .leaflet-top.leaflet-right { top: 68px !important; }
+  .leaflet-control-zoom {
+    border: none !important;
+    box-shadow: var(--shadow) !important;
+    border-radius: var(--radius-sm) !important;
+    overflow: hidden;
+  }
+  .leaflet-control-zoom a {
+    font-size: 18px !important;
+    color: var(--text) !important;
+    background: var(--surface) !important;
+    border-bottom: 1px solid var(--border) !important;
+    width: 34px !important;
+    height: 34px !important;
+    line-height: 34px !important;
+  }
+  .leaflet-control-zoom a:hover { background: var(--surface2) !important; }
+
+  .leaflet-popup-content-wrapper {
+    border-radius: var(--radius-sm) !important;
+    box-shadow: var(--shadow) !important;
+    padding: 0 !important;
+  }
+  .leaflet-popup-content {
+    margin: 0 !important;
+  }
+  .popup-inner {
+    padding: 10px 14px;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .popup-inner strong { font-size: 14px; font-weight: 600; color: var(--text); }
+  .popup-inner p { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .leaflet-popup-tip { display: none; }
+</style>
 </head>
 <body>
 
-  <div class="display" id="disp">0</div>
-  <div class="buttons">
-    <button class="btn spec" id="ac">AC</button>
-    <button class="btn spec" id="plusminus">+/−</button>
-    <button class="btn spec" id="pct">%</button>
-    <button class="btn op" data-op="/">÷</button>
-
-    <button class="btn num" data-num="7">7</button>
-    <button class="btn num" data-num="8">8</button>
-    <button class="btn num" data-num="9">9</button>
-    <button class="btn op" data-op="*">×</button>
-
-    <button class="btn num" data-num="4">4</button>
-    <button class="btn num" data-num="5">5</button>
-    <button class="btn num" data-num="6">6</button>
-    <button class="btn op" data-op="-">−</button>
-
-    <button class="btn num" data-num="1">1</button>
-    <button class="btn num" data-num="2">2</button>
-    <button class="btn num" data-num="3">3</button>
-    <button class="btn op" data-op="+">+</button>
-
-    <button class="btn num zero" data-num="0">0</button>
-    <button class="btn num" data-num=".">.</button>
-    <button class="btn op" id="eq">=</button>
+<div id="app">
+  <div id="header">
+    <div class="search-bar">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+      </svg>
+      <input type="text" id="search-input" placeholder="Mehmonxona qidiring...">
+      <button class="loc-btn" id="loc-btn" title="Joylashuvni aniqlash">
+        <svg width="16" height="16" fill="none" stroke="#fff" stroke-width="2.2" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+          <circle cx="12" cy="12" r="7" stroke-dasharray="3 2"/>
+        </svg>
+      </button>
+    </div>
   </div>
 
-  <script>
-    const disp = document.getElementById('disp');
-    let current = '0', prev = '', operator = null, justCalc = false, waitingForOperand = false;
+  <div id="map-section">
+    <div id="map"></div>
+  </div>
 
-    function setDisplay(val) {
-      let s = String(val);
-      if (s.length > 12) {
-        let n = parseFloat(s);
-        s = n.toPrecision(9).replace(/\.?0+$/, '');
-      }
-      disp.textContent = s;
-      current = s;
-    }
+  <div id="divider"></div>
 
-    function updateAC() {
-      document.getElementById('ac').textContent = (current === '0' && !prev) ? 'AC' : 'C';
-    }
+  <div id="list-section">
+    <div class="list-header">
+      <span class="list-title">Mehmonxonalar</span>
+      <span class="active-pill" id="active-pill">0 belgilangan</span>
+    </div>
+    <div id="hotel-list"></div>
+  </div>
+</div>
 
-    document.querySelectorAll('[data-num]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        let v = btn.dataset.num;
-        if (waitingForOperand) { current = v === '.' ? '0.' : v; waitingForOperand = false; }
-        else if (justCalc) { current = v === '.' ? '0.' : v; justCalc = false; }
-        else {
-          if (v === '.' && current.includes('.')) return;
-          current = current === '0' && v !== '.' ? v : current + v;
-        }
-        setDisplay(current);
-        updateAC();
-      });
-    });
+<div id="toast"></div>
 
-    document.querySelectorAll('[data-op]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        let op = btn.dataset.op;
-        document.querySelectorAll('[data-op]').forEach(b => b.classList.remove('active-op'));
-        btn.classList.add('active-op');
-        if (prev && operator && !waitingForOperand) {
-          let res = calc(parseFloat(prev), parseFloat(current), operator);
-          setDisplay(res); prev = String(res);
-        } else { prev = current; }
-        operator = op;
-        waitingForOperand = true;
-        justCalc = false;
-        updateAC();
-      });
-    });
+<script>
+const HOTELS = [
+  { id:1, name:"Grand Palace Hotel",   rooms:240, stars:5, price:"$180/kecha", lat:41.2995, lng:69.2401, emoji:"🏨" },
+  { id:2, name:"City Inn Express",      rooms:85,  stars:3, price:"$65/kecha",  lat:41.3020, lng:69.2350, emoji:"🏩" },
+  { id:3, name:"Sunset Boutique",       rooms:32,  stars:4, price:"$95/kecha",  lat:41.2960, lng:69.2470, emoji:"🌅" },
+  { id:4, name:"Blue Sky Resort",       rooms:180, stars:4, price:"$120/kecha", lat:41.2940, lng:69.2310, emoji:"🏖" },
+  { id:5, name:"Metro Stay Hotel",      rooms:120, stars:3, price:"$55/kecha",  lat:41.3050, lng:69.2500, emoji:"🏢" },
+  { id:6, name:"The Heritage Inn",      rooms:55,  stars:5, price:"$210/kecha", lat:41.2910, lng:69.2430, emoji:"🏛" },
+  { id:7, name:"Comfort Lodge",         rooms:70,  stars:2, price:"$40/kecha",  lat:41.3070, lng:69.2380, emoji:"🛖" },
+  { id:8, name:"Panorama Suites",       rooms:95,  stars:4, price:"$140/kecha", lat:41.2975, lng:69.2545, emoji:"🌃" },
+];
 
-    document.getElementById('eq').addEventListener('click', () => {
-      document.querySelectorAll('[data-op]').forEach(b => b.classList.remove('active-op'));
-      if (!operator || !prev) return;
-      let res = calc(parseFloat(prev), parseFloat(current), operator);
-      setDisplay(res);
-      prev = ''; operator = null; justCalc = true; waitingForOperand = false;
-      updateAC();
-    });
+let userLat = 41.2995, userLng = 69.2401;
+let map, userMarker;
+const activeSet = new Set();
+const markerMap = {};
+let filteredIds = new Set(HOTELS.map(h => h.id));
 
-    document.getElementById('ac').addEventListener('click', () => {
-      if (document.getElementById('ac').textContent === 'C') {
-        current = '0'; setDisplay('0');
+// Init map
+map = L.map('map', {
+  center: [userLat, userLng],
+  zoom: 14,
+  zoomControl: true,
+  attributionControl: false
+});
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  maxZoom: 19
+}).addTo(map);
+
+// User marker
+function placeUserMarker(lat, lng) {
+  if (userMarker) map.removeLayer(userMarker);
+  const icon = L.divIcon({
+    html: '<div class="user-marker-inner"></div>',
+    className: '',
+    iconSize: [16, 16],
+    iconAnchor: [8, 8]
+  });
+  userMarker = L.marker([lat, lng], { icon, zIndexOffset: 1000 }).addTo(map);
+}
+
+placeUserMarker(userLat, userLng);
+
+// Hotel markers (hidden by default)
+HOTELS.forEach(h => {
+  const el = document.createElement('div');
+  el.className = 'hotel-marker';
+  el.textContent = h.name.split(' ')[0];
+  el.style.display = 'none';
+
+  const icon = L.divIcon({
+    html: el.outerHTML,
+    className: '',
+    iconSize: null,
+    iconAnchor: [0, 20]
+  });
+
+  const marker = L.marker([h.lat, h.lng], { icon }).addTo(map);
+
+  marker.bindPopup(`
+    <div class="popup-inner">
+      <strong>${h.emoji} ${h.name}</strong>
+      <p>${h.rooms} xona • ${h.price}</p>
+    </div>
+  `, { closeButton: false, autoPan: false });
+
+  marker.on('click', () => {
+    scrollToItem(h.id);
+    highlightItem(h.id);
+  });
+
+  markerMap[h.id] = { marker, el: null };
+});
+
+function updateMarker(id, isActive) {
+  const hotel = HOTELS.find(h => h.id === id);
+  if (!hotel) return;
+
+  map.removeLayer(markerMap[id].marker);
+
+  const div = document.createElement('div');
+  div.className = 'hotel-marker' + (isActive ? ' active' : '');
+  div.textContent = hotel.name.split(' ')[0];
+  if (!isActive) div.style.display = 'none';
+
+  const icon = L.divIcon({
+    html: div.outerHTML,
+    className: '',
+    iconSize: null,
+    iconAnchor: [0, 20]
+  });
+
+  const m = L.marker([hotel.lat, hotel.lng], { icon }).addTo(map);
+  m.bindPopup(`
+    <div class="popup-inner">
+      <strong>${hotel.emoji} ${hotel.name}</strong>
+      <p>${hotel.rooms} xona • ${hotel.price}</p>
+    </div>
+  `, { closeButton: false, autoPan: false });
+  m.on('click', () => { scrollToItem(id); highlightItem(id); });
+
+  markerMap[id].marker = m;
+}
+
+function scrollToItem(id) {
+  const el = document.getElementById('item-' + id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function highlightItem(id) {
+  document.querySelectorAll('.hotel-item').forEach(el => el.classList.remove('highlighted'));
+  const el = document.getElementById('item-' + id);
+  if (el) el.classList.add('highlighted');
+}
+
+function dist(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function formatDist(m) {
+  return m < 1000 ? Math.round(m) + ' m' : (m/1000).toFixed(1) + ' km';
+}
+
+function renderList(query = '') {
+  const q = query.toLowerCase().trim();
+  const list = document.getElementById('hotel-list');
+  list.innerHTML = '';
+
+  const sorted = [...HOTELS]
+    .filter(h => !q || h.name.toLowerCase().includes(q))
+    .sort((a, b) => dist(userLat, userLng, a.lat, a.lng) - dist(userLat, userLng, b.lat, b.lng));
+
+  filteredIds = new Set(sorted.map(h => h.id));
+
+  sorted.forEach(h => {
+    const d = dist(userLat, userLng, h.lat, h.lng);
+    const isActive = activeSet.has(h.id);
+    const item = document.createElement('div');
+    item.className = 'hotel-item' + (isActive ? ' highlighted' : '');
+    item.id = 'item-' + h.id;
+    item.innerHTML = `
+      <div class="hotel-icon">${h.emoji}</div>
+      <div class="hotel-info">
+        <div class="hotel-name">${h.name}</div>
+        <div class="hotel-sub">
+          <span class="stars">${'★'.repeat(h.stars)}${'☆'.repeat(5-h.stars)}</span>
+          <span class="badge">${h.rooms} xona</span>
+          <span class="dist">${formatDist(d)}</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+        <span class="price">${h.price}</span>
+        <div class="cb-wrap">
+          <input type="checkbox" class="cb" id="cb-${h.id}" ${isActive ? 'checked' : ''}>
+        </div>
+      </div>
+    `;
+
+    item.querySelector('.cb').addEventListener('change', e => {
+      e.stopPropagation();
+      const checked = e.target.checked;
+      if (checked) {
+        activeSet.add(h.id);
+        map.flyTo([h.lat, h.lng], 15, { duration: 0.8 });
+        showToast(`${h.name} xaritaga qo'shildi`);
       } else {
-        current = '0'; prev = ''; operator = null; justCalc = false; waitingForOperand = false;
-        setDisplay('0');
+        activeSet.delete(h.id);
+        showToast(`${h.name} olib tashlandi`);
       }
-      document.querySelectorAll('[data-op]').forEach(b => b.classList.remove('active-op'));
-      updateAC();
+      updateMarker(h.id, checked);
+      updateBadge();
+      item.classList.toggle('highlighted', checked);
     });
 
-    document.getElementById('plusminus').addEventListener('click', () => {
-      let n = parseFloat(current) * -1;
-      setDisplay(n); updateAC();
+    item.querySelector('.hotel-info').addEventListener('click', () => {
+      if (activeSet.has(h.id)) {
+        map.flyTo([h.lat, h.lng], 16, { duration: 0.8 });
+        markerMap[h.id].marker.openPopup();
+      }
     });
 
-    document.getElementById('pct').addEventListener('click', () => {
-      let n = parseFloat(current) / 100;
-      setDisplay(n); updateAC();
-    });
+    list.appendChild(item);
+  });
 
-    function calc(a, b, op) {
-      let r;
-      if (op === '+') r = a + b;
-      else if (op === '-') r = a - b;
-      else if (op === '*') r = a * b;
-      else if (op === '/') r = b === 0 ? 'Xato' : a / b;
-      if (typeof r === 'number') r = parseFloat(r.toPrecision(12));
-      return r;
-    }
-  </script>
+  if (!sorted.length) {
+    list.innerHTML = `<div style="padding:32px 16px;text-align:center;color:var(--text3);font-size:14px;">Hech narsa topilmadi</div>`;
+  }
+}
 
+function updateBadge() {
+  const pill = document.getElementById('active-pill');
+  if (activeSet.size > 0) {
+    pill.style.display = '';
+    pill.textContent = activeSet.size + ' belgilangan';
+  } else {
+    pill.style.display = 'none';
+  }
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// Search
+document.getElementById('search-input').addEventListener('input', e => {
+  renderList(e.target.value);
+});
+
+// Geolocation
+document.getElementById('loc-btn').addEventListener('click', () => {
+  if (!navigator.geolocation) { showToast("Geolocation qo'llab-quvvatlanmaydi"); return; }
+  showToast("Joylashuv aniqlanmoqda...");
+  navigator.geolocation.getCurrentPosition(pos => {
+    userLat = pos.coords.latitude;
+    userLng = pos.coords.longitude;
+    placeUserMarker(userLat, userLng);
+    map.flyTo([userLat, userLng], 15, { duration: 1 });
+    renderList(document.getElementById('search-input').value);
+    showToast("Joylashuv aniqlandi ✓");
+  }, () => {
+    showToast("Joylashuvni aniqlab bo'lmadi");
+  });
+});
+
+renderList();
+</script>
 </body>
 </html>
