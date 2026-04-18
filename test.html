@@ -9,22 +9,21 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
         }
 
         body {
-            /* Ranglarni biroz chuqurlashtirdim */
-            background: radial-gradient(circle at center, #2c5364, #203a43, #0f2027);
+            background: radial-gradient(circle at top right, #2c5364, #203a43, #0f2027);
             height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
             color: white;
-            /* iPhone uchun teginish effektini yaxshilash */
             -webkit-tap-highlight-color: transparent;
         }
 
+        /* Orqa fondagi suzuvchi pufakchalar */
         .background-animate {
             position: absolute;
             width: 100%;
@@ -34,87 +33,81 @@
 
         .circle {
             position: absolute;
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.05);
             border-radius: 50%;
-            /* Animatsiya silliqroq bo'lishi uchun */
-            animation: float 25s infinite ease-in-out;
+            animation: float Up 20s infinite ease-in-out;
         }
 
-        @keyframes float {
-            0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0; }
-            50% { opacity: 0.4; transform: translateY(-50vh) rotate(180deg); }
+        @keyframes floatUp {
+            0% { transform: translateY(110vh) scale(0.5); opacity: 0; }
+            50% { opacity: 0.3; }
+            100% { transform: translateY(-20vh) scale(1.2); opacity: 0; }
         }
 
         .container {
-            width: 85%;
+            width: 88%;
             max-width: 380px;
+            padding: 40px 20px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border-radius: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 40px 80px rgba(0,0,0,0.4);
             text-align: center;
-            padding: 40px 25px;
-            background: rgba(255, 255, 255, 0.07);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: 35px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 40px 100px rgba(0,0,0,0.5);
-            animation: fadeIn 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+            animation: entrance 1s cubic-bezier(0.23, 1, 0.32, 1);
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes entrance {
+            from { opacity: 0; transform: scale(0.8) translateY(30px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
         }
 
         h1 {
-            margin-bottom: 40px;
             font-weight: 200;
-            font-size: 28px;
-            letter-spacing: 5px;
+            font-size: 32px;
+            letter-spacing: 6px;
+            margin-bottom: 35px;
             text-transform: uppercase;
-            text-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
 
         .menu-btn {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 12px;
             width: 100%;
             padding: 18px;
-            margin: 18px 0;
+            margin: 15px 0;
             text-decoration: none;
             color: white;
-            font-size: 16px;
-            letter-spacing: 1px;
-            background: rgba(255, 255, 255, 0.03);
+            font-size: 17px;
+            font-weight: 400;
+            background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            transition: all 0.3s ease;
-            position: relative;
+            border-radius: 22px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Aktiv holat (barmoq bilan bosganda) */
+        /* iPhoneda bosish effekti */
         .menu-btn:active {
-            transform: scale(0.95);
-            background: rgba(255, 255, 255, 0.2);
+            transform: scale(0.94);
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.4);
         }
 
-        /* Hover faqat sichqoncha bor qurilmalar uchun */
-        @media (hover: hover) {
-            .menu-btn:hover {
-                background: white;
-                color: #0f2027;
-                box-shadow: 0 15px 30px rgba(0,0,0,0.4);
-            }
-        }
+        /* Tugmalarning chiqib kelishi */
+        .btn-1 { animation: slide 0.7s both 0.3s; }
+        .btn-2 { animation: slide 0.7s both 0.5s; }
+        .btn-3 { animation: slide 0.7s both 0.7s; }
 
-        /* Tugmalar navbatma-navbat chiqishi */
-        .btn-1 { animation: slideUp 0.6s both 0.2s; }
-        .btn-2 { animation: slideUp 0.6s both 0.4s; }
-        .btn-3 { animation: slideUp 0.6s both 0.6s; }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(30px); }
+        @keyframes slide {
+            from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        .icon {
+            font-size: 20px;
         }
     </style>
 </head>
@@ -126,30 +119,35 @@
         <h1>UberHotel</h1>
         
         <a href="https://hayotus.github.io/uberhotel/calc.html" class="menu-btn btn-1">
-            <span>🧮</span> Calculator
+            <span class="icon">🧮</span> Calculator
         </a>
         
         <a href="https://hayotus.github.io/uberhotel/hotel.html" class="menu-btn btn-2">
-            <span>🏨</span> Hotel
+            <span class="icon">🏨</span> Hotel
         </a>
         
-        <a href="#" class="menu-btn btn-3" onclick="alert('Tez kunda!')">
-            <span>📝</span> Test
+        <a href="https://hayotus.github.io/uberhotel/test.html" class="menu-btn btn-3">
+            <span class="icon">📝</span> Test
         </a>
     </div>
 
     <script>
         const circlesContainer = document.getElementById('circles');
-        for (let i = 0; i < 12; i++) {
+        function createCircle() {
             const circle = document.createElement('div');
             circle.className = 'circle';
-            const size = Math.random() * 80 + 20 + 'px';
+            const size = Math.random() * 60 + 15 + 'px';
             circle.style.width = size;
             circle.style.height = size;
             circle.style.left = Math.random() * 100 + '%';
             circle.style.bottom = "-100px";
+            circle.style.animationDuration = Math.random() * 10 + 10 + 's';
             circle.style.animationDelay = Math.random() * 5 + 's';
             circlesContainer.appendChild(circle);
+        }
+        
+        for (let i = 0; i < 15; i++) {
+            createCircle();
         }
     </script>
 </body>
