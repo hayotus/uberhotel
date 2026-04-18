@@ -50,10 +50,12 @@
             transition: stroke-dashoffset 0.1s linear;
         }
 
+        /* O'zgartirilgan rasm qismi */
         .uber-logo {
-            width: 70px;
-            fill: white;
+            width: 80px;
+            height: auto;
             z-index: 10;
+            object-fit: contain;
         }
 
         /* Foiz matni */
@@ -76,7 +78,7 @@
         #horizontal-fill {
             height: 100%;
             width: 0%;
-            background: #28a745; /* Gorizontal bar yashil rangda */
+            background: #28a745; 
             transition: width 0.1s linear;
         }
 
@@ -102,7 +104,6 @@
 
         .check { color: #28a745; }
 
-        /* Yakuniy tugma */
         #complete-btn {
             display: none;
             width: 100%;
@@ -136,9 +137,7 @@
                 <circle cx="90" cy="90" r="85" stroke="#222" stroke-width="6" fill="transparent"/>
                 <circle id="circle-progress" class="progress-ring__circle" cx="90" cy="90" r="85"/>
             </svg>
-            <svg class="uber-logo" viewBox="0 0 244.75 84.81">
-                <path d="M244.75 42.41c0 23.42-19 42.4-42.41 42.4s-42.41-19-42.41-42.4S178.93 0 202.34 0s42.41 18.99 42.41 42.41zm-68.51 0c0 14.39 11.68 26.11 26.1 26.11S228.44 56.8 228.44 42.41 216.76 16.3 202.34 16.3s-26.1 11.72-26.1 26.11zM149.33 58.71V1.82h16.3v79.4h-16.3v-5.69a26.1 26.1 0 0 1-21.57 9.28c-14.42 0-26.1-11.72-26.1-26.11S113.34 22.6 127.76 22.6a26 26 0 0 1 21.57 10.02zm-31.27-16.3c0 14.39 11.68 26.11 26.1 26.11s26.11-11.72 26.11-26.11S158.6 16.3 144.17 16.3s-26.1 11.72-26.1 26.11zM74.19 1.82h16.3V81.2H74.19v-5.69a26.11 26.11 0 0 1-21.57 9.3c-14.42 0-26.11-11.72-26.11-26.11S38.2 22.6 52.62 22.6a26.1 26.1 0 0 1 21.57 10.02zm-31.27 16.3c0 14.39 11.68 26.11 26.1 26.11s26.11-11.72 26.11-26.11S83.45 16.3 69 16.3s-26.1 11.72-26.11 26.11zM0 1.82h16.3V81.2H0z"/>
-            </svg>
+            <img src="src/uber.jpg" class="uber-logo" alt="Uber Logo">
         </div>
 
         <div id="percent-display">0%</div>
@@ -188,18 +187,13 @@
 
         const interval = setInterval(() => {
             progress += 1;
-            
-            // 1. Matnni yangilash
             percentText.textContent = progress + "%";
 
-            // 2. Aylana progress
             const offset = circumference - (progress / 100 * circumference);
             circle.style.strokeDashoffset = offset;
 
-            // 3. Gorizontal progress
             horizontal.style.width = progress + "%";
 
-            // 4. Xabarlarni chiqarish (har 10% da bittadan)
             if (progress % 10 === 0 && taskIndex < messages.length) {
                 const item = document.createElement('div');
                 item.className = 'log-item';
@@ -213,7 +207,7 @@
                 clearInterval(interval);
                 btn.style.display = 'block';
             }
-        }, 100); // Jami 10 soniya atrofida davom etadi
+        }, 100);
 
         btn.addEventListener('click', () => {
             document.getElementById('main-ui').style.display = 'none';
