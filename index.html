@@ -7,609 +7,424 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
-
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
-    --bg: #f5f2ed;
     --surface: #ffffff;
-    --surface2: #f0ece5;
+    --surface2: #f4f4f6;
     --accent: #2563eb;
     --accent-light: #eff6ff;
-    --text: #1a1814;
-    --text2: #6b6560;
-    --text3: #a09b94;
+    --text: #111827;
+    --text2: #6b7280;
+    --text3: #9ca3af;
     --border: rgba(0,0,0,0.08);
-    --border2: rgba(0,0,0,0.14);
-    --shadow: 0 2px 16px rgba(0,0,0,0.08);
+    --border2: rgba(0,0,0,0.15);
+    --shadow: 0 2px 16px rgba(0,0,0,0.09);
     --radius: 14px;
     --radius-sm: 8px;
   }
-
-  html, body {
-    height: 100%;
-    overflow: hidden;
-    background: var(--bg);
-    font-family: 'DM Sans', sans-serif;
-    color: var(--text);
-  }
+  html, body { height: 100%; overflow: hidden; font-family: 'DM Sans', sans-serif; color: var(--text); background: #e5e7eb; }
 
   #app {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    max-width: 430px;
-    margin: 0 auto;
-    background: var(--surface);
-    position: relative;
-    overflow: hidden;
+    display: flex; flex-direction: column;
+    height: 100vh; max-width: 430px;
+    margin: 0 auto; background: var(--surface);
+    position: relative; overflow: hidden;
+    box-shadow: 0 0 40px rgba(0,0,0,0.15);
   }
 
-  /* HEADER */
   #header {
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    z-index: 1000;
-    padding: 14px 16px 0;
+    position: absolute; top: 0; left: 0; right: 0;
+    z-index: 1000; padding: 12px 14px 0;
     pointer-events: none;
   }
-
   .search-bar {
     background: var(--surface);
     border-radius: 50px;
     box-shadow: var(--shadow), 0 0 0 1px var(--border);
-    padding: 10px 16px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    padding: 9px 14px; display: flex; align-items: center; gap: 8px;
     pointer-events: all;
   }
-
-  .search-bar svg { flex-shrink: 0; color: var(--text3); }
-
   .search-bar input {
-    border: none;
-    outline: none;
-    background: transparent;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 15px;
-    color: var(--text);
-    width: 100%;
+    border: none; outline: none; background: transparent;
+    font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); width: 100%;
   }
-
   .search-bar input::placeholder { color: var(--text3); }
-
-  .loc-btn {
-    width: 34px; height: 34px;
-    border-radius: 50%;
-    background: var(--accent);
-    border: none;
-    cursor: pointer;
+  .icon-btn {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: none; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    pointer-events: all;
+    flex-shrink: 0; pointer-events: all;
     transition: transform 0.15s;
   }
-  .loc-btn:active { transform: scale(0.93); }
+  .icon-btn:active { transform: scale(0.9); }
+  #loc-btn { background: var(--accent); }
+  #loc-btn.loading { background: #93c5fd; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
 
-  /* MAP */
-  #map-section {
-    flex: 0 0 52%;
-    position: relative;
-  }
-
-  #map {
-    width: 100%;
-    height: 100%;
-  }
-
-  .leaflet-container {
-    font-family: 'DM Sans', sans-serif;
-  }
-
-  /* Custom marker */
-  .hotel-marker {
+  .radius-bar {
+    margin-top: 8px;
     background: var(--surface);
-    border: 2px solid rgba(0,0,0,0.12);
     border-radius: 50px;
-    padding: 4px 10px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text);
-    white-space: nowrap;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-    cursor: pointer;
-    transition: all 0.2s;
+    box-shadow: var(--shadow), 0 0 0 1px var(--border);
+    padding: 7px 14px; display: flex; align-items: center; gap: 10px;
+    pointer-events: all;
   }
-  .hotel-marker.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
-    box-shadow: 0 4px 16px rgba(37,99,235,0.4);
+  .radius-bar label { font-size: 12px; color: var(--text2); white-space: nowrap; flex-shrink: 0; }
+  .radius-bar input[type=range] { flex: 1; accent-color: var(--accent); }
+  #radius-val { font-size: 12px; font-weight: 600; color: var(--accent); min-width: 40px; text-align: right; }
+
+  #map-section { flex: 0 0 50%; position: relative; }
+  #map { width: 100%; height: 100%; }
+  .leaflet-container { font-family: 'DM Sans', sans-serif; }
+
+  .hotel-pin {
+    background: var(--surface); border: 1.5px solid var(--border2);
+    border-radius: 50px; padding: 3px 9px;
+    font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600; color: var(--text);
+    white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.15); cursor: pointer;
+  }
+  .hotel-pin.active {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+    box-shadow: 0 3px 12px rgba(37,99,235,0.4);
+  }
+  .user-dot {
+    width: 14px; height: 14px; background: var(--accent);
+    border-radius: 50%; border: 2.5px solid #fff;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.22);
   }
 
-  .user-marker-inner {
-    width: 16px; height: 16px;
-    background: var(--accent);
-    border-radius: 50%;
-    border: 3px solid #fff;
-    box-shadow: 0 0 0 3px rgba(37,99,235,0.25);
-  }
+  #divider { height: 1px; background: var(--border); flex-shrink: 0; }
 
-  /* DIVIDER */
-  #divider {
-    height: 1px;
-    background: var(--border);
-    flex-shrink: 0;
-  }
-
-  /* LIST */
-  #list-section {
-    flex: 1;
-    overflow-y: auto;
-    background: var(--surface);
-    -webkit-overflow-scrolling: touch;
-  }
-
+  #list-section { flex: 1; overflow-y: auto; background: var(--surface); -webkit-overflow-scrolling: touch; }
   #list-section::-webkit-scrollbar { width: 0; }
 
   .list-header {
-    padding: 14px 16px 8px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky; top: 0;
-    background: var(--surface);
-    z-index: 5;
-    border-bottom: 1px solid var(--border);
+    padding: 10px 14px 8px; display: flex; align-items: center;
+    justify-content: space-between; position: sticky; top: 0;
+    background: var(--surface); z-index: 5; border-bottom: 1px solid var(--border);
   }
+  .list-title { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.07em; }
+  .active-pill { background: var(--accent); color: #fff; border-radius: 20px; padding: 2px 9px; font-size: 11px; font-weight: 500; display: none; }
+  .count-badge { background: var(--surface2); color: var(--text2); border-radius: 20px; padding: 2px 9px; font-size: 11px; font-weight: 500; }
 
-  .list-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text2);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-
-  .active-pill {
-    background: var(--accent);
-    color: #fff;
-    border-radius: 20px;
-    padding: 2px 10px;
-    font-size: 12px;
-    font-weight: 500;
-    display: none;
-  }
+  .state-box { padding: 40px 20px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .state-box .icon { font-size: 36px; }
+  .state-box .msg { font-size: 14px; color: var(--text2); line-height: 1.6; }
+  .state-box .sub { font-size: 12px; color: var(--text3); line-height: 1.5; }
+  .spinner { width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
   .hotel-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    transition: background 0.1s;
-    position: relative;
+    display: flex; align-items: center; gap: 11px;
+    padding: 11px 14px; border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: background 0.1s;
   }
-
   .hotel-item:hover { background: var(--surface2); }
   .hotel-item.highlighted { background: var(--accent-light); }
-  .hotel-item:active { background: #e0eaff; }
 
-  .hotel-icon {
-    width: 44px; height: 44px;
-    border-radius: var(--radius-sm);
-    background: var(--surface2);
+  .hotel-num {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--surface2); border: 1px solid var(--border2);
     display: flex; align-items: center; justify-content: center;
-    font-size: 20px;
-    flex-shrink: 0;
-    border: 1px solid var(--border);
+    font-size: 11px; font-weight: 600; color: var(--text2); flex-shrink: 0;
   }
-
   .hotel-info { flex: 1; min-width: 0; }
-
-  .hotel-name {
-    font-size: 15px;
-    font-weight: 500;
-    color: var(--text);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .hotel-sub {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 3px;
-    flex-wrap: wrap;
-  }
-
-  .stars { color: #d97706; font-size: 11px; letter-spacing: 1px; }
-
-  .badge {
-    background: var(--surface2);
-    border-radius: 4px;
-    padding: 1px 6px;
-    font-size: 11px;
-    color: var(--text2);
-    font-weight: 500;
-  }
-
-  .dist {
-    font-size: 11px;
-    color: var(--text3);
-  }
-
-  .price {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--accent);
-  }
-
-  /* Checkbox */
-  .cb-wrap {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+  .hotel-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hotel-sub { display: flex; align-items: center; gap: 6px; margin-top: 2px; flex-wrap: wrap; }
+  .badge { background: var(--surface2); border-radius: 4px; padding: 1px 5px; font-size: 11px; color: var(--text2); font-weight: 500; }
+  .dist-badge { font-size: 11px; color: var(--accent); font-weight: 600; }
+  .stars { color: #d97706; font-size: 11px; }
+  .type-badge { font-size: 10px; color: var(--text3); background: var(--surface2); border-radius: 4px; padding: 1px 5px; }
+  .addr { font-size: 11px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 
   .cb {
-    width: 22px; height: 22px;
-    border-radius: 6px;
-    border: 1.5px solid var(--border2);
-    background: var(--surface);
-    appearance: none;
-    -webkit-appearance: none;
-    cursor: pointer;
-    position: relative;
-    transition: all 0.15s;
-    flex-shrink: 0;
+    width: 20px; height: 20px; border-radius: 5px;
+    border: 1.5px solid var(--border2); background: var(--surface);
+    appearance: none; -webkit-appearance: none;
+    cursor: pointer; position: relative; transition: all 0.15s; flex-shrink: 0;
   }
-  .cb:checked {
-    background: var(--accent);
-    border-color: var(--accent);
-  }
-  .cb:checked::after {
-    content: '';
-    position: absolute;
-    left: 6px; top: 3px;
-    width: 7px; height: 11px;
-    border: 2px solid #fff;
-    border-left: none; border-top: none;
-    transform: rotate(45deg);
-  }
+  .cb:checked { background: var(--accent); border-color: var(--accent); }
+  .cb:checked::after { content: ''; position: absolute; left: 5px; top: 2px; width: 6px; height: 10px; border: 2px solid #fff; border-left: none; border-top: none; transform: rotate(45deg); }
 
-  /* Toast */
   #toast {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%) translateY(80px);
-    background: rgba(20,20,20,0.9);
-    color: #fff;
-    padding: 10px 20px;
-    border-radius: 50px;
-    font-size: 13px;
-    font-weight: 500;
-    z-index: 9999;
+    position: fixed; bottom: 20px; left: 50%;
+    transform: translateX(-50%) translateY(70px);
+    background: rgba(17,24,39,0.92); color: #fff;
+    padding: 9px 18px; border-radius: 50px;
+    font-size: 13px; font-weight: 500; z-index: 9999;
     transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
-    white-space: nowrap;
-    max-width: 90%;
-    text-align: center;
+    white-space: nowrap; pointer-events: none;
   }
   #toast.show { transform: translateX(-50%) translateY(0); }
 
-  /* Leaflet overrides */
-  .leaflet-top.leaflet-right { top: 68px !important; }
-  .leaflet-control-zoom {
-    border: none !important;
-    box-shadow: var(--shadow) !important;
-    border-radius: var(--radius-sm) !important;
-    overflow: hidden;
-  }
-  .leaflet-control-zoom a {
-    font-size: 18px !important;
-    color: var(--text) !important;
-    background: var(--surface) !important;
-    border-bottom: 1px solid var(--border) !important;
-    width: 34px !important;
-    height: 34px !important;
-    line-height: 34px !important;
-  }
-  .leaflet-control-zoom a:hover { background: var(--surface2) !important; }
-
-  .leaflet-popup-content-wrapper {
-    border-radius: var(--radius-sm) !important;
-    box-shadow: var(--shadow) !important;
-    padding: 0 !important;
-  }
-  .leaflet-popup-content {
-    margin: 0 !important;
-  }
-  .popup-inner {
-    padding: 10px 14px;
-    font-family: 'DM Sans', sans-serif;
-  }
-  .popup-inner strong { font-size: 14px; font-weight: 600; color: var(--text); }
-  .popup-inner p { font-size: 12px; color: var(--text2); margin-top: 2px; }
-  .leaflet-popup-tip { display: none; }
+  .leaflet-top.leaflet-right { top: 105px !important; }
+  .leaflet-control-zoom { border: none !important; box-shadow: var(--shadow) !important; border-radius: var(--radius-sm) !important; overflow: hidden; }
+  .leaflet-control-zoom a { font-size: 16px !important; background: var(--surface) !important; color: var(--text) !important; border-bottom: 1px solid var(--border) !important; width: 32px !important; height: 32px !important; line-height: 32px !important; }
+  .leaflet-popup-content-wrapper { border-radius: 10px !important; box-shadow: var(--shadow) !important; padding: 0 !important; }
+  .leaflet-popup-content { margin: 0 !important; }
+  .popup-inner { padding: 10px 13px; font-family: 'DM Sans', sans-serif; }
+  .popup-inner strong { font-size: 13px; font-weight: 600; }
+  .popup-inner p { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .leaflet-popup-tip-container { display: none; }
 </style>
 </head>
 <body>
-
 <div id="app">
   <div id="header">
     <div class="search-bar">
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <svg width="15" height="15" fill="none" stroke="#9ca3af" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0">
         <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
       </svg>
-      <input type="text" id="search-input" placeholder="Mehmonxona qidiring...">
-      <button class="loc-btn" id="loc-btn" title="Joylashuvni aniqlash">
-        <svg width="16" height="16" fill="none" stroke="#fff" stroke-width="2.2" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
-          <circle cx="12" cy="12" r="7" stroke-dasharray="3 2"/>
+      <input type="text" id="search-input" placeholder="Nom bo'yicha filter...">
+      <button class="icon-btn" id="loc-btn" title="GPS joylashuvni aniqlash">
+        <svg width="15" height="15" fill="none" stroke="#fff" stroke-width="2.2" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/>
+          <circle cx="12" cy="12" r="7"/>
         </svg>
       </button>
     </div>
+    <div class="radius-bar">
+      <label>Qidiruv radiusi:</label>
+      <input type="range" id="radius-range" min="500" max="5000" step="250" value="1500">
+      <span id="radius-val">1.5 km</span>
+    </div>
   </div>
 
-  <div id="map-section">
-    <div id="map"></div>
-  </div>
-
+  <div id="map-section"><div id="map"></div></div>
   <div id="divider"></div>
 
   <div id="list-section">
     <div class="list-header">
       <span class="list-title">Mehmonxonalar</span>
-      <span class="active-pill" id="active-pill">0 belgilangan</span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <span class="count-badge" id="count-badge">—</span>
+        <span class="active-pill" id="active-pill">0 belgilangan</span>
+      </div>
     </div>
-    <div id="hotel-list"></div>
+    <div id="hotel-list">
+      <div class="state-box">
+        <div class="icon">📍</div>
+        <div class="msg">GPS tugmasini bosib,<br>joylashuvingizni aniqlang</div>
+        <div class="sub">Atrofdagi haqiqiy mehmonxonalar<br>OpenStreetMap'dan yuklanadi</div>
+      </div>
+    </div>
   </div>
 </div>
-
 <div id="toast"></div>
 
 <script>
-const HOTELS = [
-  { id:1, name:"Grand Palace Hotel",   rooms:240, stars:5, price:"$180/kecha", lat:41.2995, lng:69.2401, emoji:"🏨" },
-  { id:2, name:"City Inn Express",      rooms:85,  stars:3, price:"$65/kecha",  lat:41.3020, lng:69.2350, emoji:"🏩" },
-  { id:3, name:"Sunset Boutique",       rooms:32,  stars:4, price:"$95/kecha",  lat:41.2960, lng:69.2470, emoji:"🌅" },
-  { id:4, name:"Blue Sky Resort",       rooms:180, stars:4, price:"$120/kecha", lat:41.2940, lng:69.2310, emoji:"🏖" },
-  { id:5, name:"Metro Stay Hotel",      rooms:120, stars:3, price:"$55/kecha",  lat:41.3050, lng:69.2500, emoji:"🏢" },
-  { id:6, name:"The Heritage Inn",      rooms:55,  stars:5, price:"$210/kecha", lat:41.2910, lng:69.2430, emoji:"🏛" },
-  { id:7, name:"Comfort Lodge",         rooms:70,  stars:2, price:"$40/kecha",  lat:41.3070, lng:69.2380, emoji:"🛖" },
-  { id:8, name:"Panorama Suites",       rooms:95,  stars:4, price:"$140/kecha", lat:41.2975, lng:69.2545, emoji:"🌃" },
-];
-
-let userLat = 41.2995, userLng = 69.2401;
-let map, userMarker;
+let userLat = null, userLng = null;
+let map, userMarker, radiusCircle;
 const activeSet = new Set();
 const markerMap = {};
-let filteredIds = new Set(HOTELS.map(h => h.id));
+let allHotels = [];
+let searchRadius = 1500;
+let fetchDebounce;
 
-// Init map
-map = L.map('map', {
-  center: [userLat, userLng],
-  zoom: 14,
-  zoomControl: true,
-  attributionControl: false
-});
+map = L.map('map', { center: [41.2995, 69.2401], zoom: 13, zoomControl: true, attributionControl: false });
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
 
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-  maxZoom: 19
-}).addTo(map);
-
-// User marker
-function placeUserMarker(lat, lng) {
-  if (userMarker) map.removeLayer(userMarker);
-  const icon = L.divIcon({
-    html: '<div class="user-marker-inner"></div>',
-    className: '',
-    iconSize: [16, 16],
-    iconAnchor: [8, 8]
-  });
-  userMarker = L.marker([lat, lng], { icon, zIndexOffset: 1000 }).addTo(map);
-}
-
-placeUserMarker(userLat, userLng);
-
-// Hotel markers (hidden by default)
-HOTELS.forEach(h => {
-  const el = document.createElement('div');
-  el.className = 'hotel-marker';
-  el.textContent = h.name.split(' ')[0];
-  el.style.display = 'none';
-
-  const icon = L.divIcon({
-    html: el.outerHTML,
-    className: '',
-    iconSize: null,
-    iconAnchor: [0, 20]
-  });
-
-  const marker = L.marker([h.lat, h.lng], { icon }).addTo(map);
-
-  marker.bindPopup(`
-    <div class="popup-inner">
-      <strong>${h.emoji} ${h.name}</strong>
-      <p>${h.rooms} xona • ${h.price}</p>
-    </div>
-  `, { closeButton: false, autoPan: false });
-
-  marker.on('click', () => {
-    scrollToItem(h.id);
-    highlightItem(h.id);
-  });
-
-  markerMap[h.id] = { marker, el: null };
-});
-
-function updateMarker(id, isActive) {
-  const hotel = HOTELS.find(h => h.id === id);
-  if (!hotel) return;
-
-  map.removeLayer(markerMap[id].marker);
-
-  const div = document.createElement('div');
-  div.className = 'hotel-marker' + (isActive ? ' active' : '');
-  div.textContent = hotel.name.split(' ')[0];
-  if (!isActive) div.style.display = 'none';
-
-  const icon = L.divIcon({
-    html: div.outerHTML,
-    className: '',
-    iconSize: null,
-    iconAnchor: [0, 20]
-  });
-
-  const m = L.marker([hotel.lat, hotel.lng], { icon }).addTo(map);
-  m.bindPopup(`
-    <div class="popup-inner">
-      <strong>${hotel.emoji} ${hotel.name}</strong>
-      <p>${hotel.rooms} xona • ${hotel.price}</p>
-    </div>
-  `, { closeButton: false, autoPan: false });
-  m.on('click', () => { scrollToItem(id); highlightItem(id); });
-
-  markerMap[id].marker = m;
-}
-
-function scrollToItem(id) {
-  const el = document.getElementById('item-' + id);
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-function highlightItem(id) {
-  document.querySelectorAll('.hotel-item').forEach(el => el.classList.remove('highlighted'));
-  const el = document.getElementById('item-' + id);
-  if (el) el.classList.add('highlighted');
-}
-
-function dist(lat1, lng1, lat2, lng2) {
-  const R = 6371000;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
+function haversine(lat1, lng1, lat2, lng2) {
+  const R = 6371000, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180;
   const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
+function fmtDist(m) { return m < 1000 ? Math.round(m) + ' m' : (m/1000).toFixed(1) + ' km'; }
 
-function formatDist(m) {
-  return m < 1000 ? Math.round(m) + ' m' : (m/1000).toFixed(1) + ' km';
+function placeUserMarker(lat, lng) {
+  if (userMarker) map.removeLayer(userMarker);
+  userMarker = L.marker([lat, lng], {
+    icon: L.divIcon({ html: '<div class="user-dot"></div>', className:'', iconSize:[14,14], iconAnchor:[7,7] }),
+    zIndexOffset: 2000
+  }).addTo(map);
 }
 
-function renderList(query = '') {
+function drawRadius(lat, lng, r) {
+  if (radiusCircle) map.removeLayer(radiusCircle);
+  radiusCircle = L.circle([lat, lng], { radius: r, color:'#2563eb', weight:1.5, fillColor:'#2563eb', fillOpacity:0.05, dashArray:'5 4' }).addTo(map);
+}
+
+function clearMarkers() {
+  Object.values(markerMap).forEach(m => map.removeLayer(m));
+  Object.keys(markerMap).forEach(k => delete markerMap[k]);
+}
+
+function addMarker(h, isActive) {
+  const short = h.name.length > 13 ? h.name.slice(0,13)+'…' : h.name;
+  const icon = L.divIcon({
+    html: `<div class="hotel-pin${isActive?' active':''}">${short}</div>`,
+    className: '', iconSize: null, iconAnchor: [0, 22]
+  });
+  const m = L.marker([h.lat, h.lng], { icon }).addTo(map);
+  m.bindPopup(`<div class="popup-inner"><strong>🏨 ${h.name}</strong><p>${h.typeLabel} • ${fmtDist(h.dist)}${h.addr ? ' • ' + h.addr : ''}</p></div>`, { closeButton:false, autoPan:false });
+  m.on('click', () => { scrollToItem(h.id); highlightItem(h.id); });
+  markerMap[h.id] = m;
+}
+
+function refreshMarker(h) {
+  if (markerMap[h.id]) map.removeLayer(markerMap[h.id]);
+  addMarker(h, activeSet.has(h.id));
+}
+
+function scrollToItem(id) { const el = document.getElementById('item-'+id); if(el) el.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+function highlightItem(id) {
+  document.querySelectorAll('.hotel-item').forEach(el => el.classList.remove('highlighted'));
+  const el = document.getElementById('item-'+id); if(el) el.classList.add('highlighted');
+}
+
+const TYPE_LABELS = { hotel:'Hotel', motel:'Motel', hostel:'Hostel', guest_house:'Mehmondo\'m', apartment:'Apartament' };
+
+function renderList(query='') {
   const q = query.toLowerCase().trim();
+  const filtered = allHotels.filter(h => !q || h.name.toLowerCase().includes(q));
   const list = document.getElementById('hotel-list');
   list.innerHTML = '';
+  document.getElementById('count-badge').textContent = filtered.length + ' ta';
 
-  const sorted = [...HOTELS]
-    .filter(h => !q || h.name.toLowerCase().includes(q))
-    .sort((a, b) => dist(userLat, userLng, a.lat, a.lng) - dist(userLat, userLng, b.lat, b.lng));
+  if (!filtered.length) {
+    list.innerHTML = `<div class="state-box"><div class="icon">🔍</div><div class="msg">Natija topilmadi</div></div>`;
+    return;
+  }
 
-  filteredIds = new Set(sorted.map(h => h.id));
-
-  sorted.forEach(h => {
-    const d = dist(userLat, userLng, h.lat, h.lng);
+  filtered.forEach((h, i) => {
     const isActive = activeSet.has(h.id);
     const item = document.createElement('div');
     item.className = 'hotel-item' + (isActive ? ' highlighted' : '');
     item.id = 'item-' + h.id;
     item.innerHTML = `
-      <div class="hotel-icon">${h.emoji}</div>
+      <div class="hotel-num">${i+1}</div>
       <div class="hotel-info">
         <div class="hotel-name">${h.name}</div>
         <div class="hotel-sub">
-          <span class="stars">${'★'.repeat(h.stars)}${'☆'.repeat(5-h.stars)}</span>
-          <span class="badge">${h.rooms} xona</span>
-          <span class="dist">${formatDist(d)}</span>
+          <span class="dist-badge">${fmtDist(h.dist)}</span>
+          ${h.stars ? '<span class="stars">'+'★'.repeat(h.stars)+'☆'.repeat(5-h.stars)+'</span>' : ''}
+          ${h.rooms ? `<span class="badge">${h.rooms} xona</span>` : ''}
+          <span class="type-badge">${h.typeLabel}</span>
         </div>
+        ${h.addr ? `<div class="addr">${h.addr}</div>` : ''}
       </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
-        <span class="price">${h.price}</span>
-        <div class="cb-wrap">
-          <input type="checkbox" class="cb" id="cb-${h.id}" ${isActive ? 'checked' : ''}>
-        </div>
-      </div>
+      <input type="checkbox" class="cb" ${isActive?'checked':''}>
     `;
-
     item.querySelector('.cb').addEventListener('change', e => {
       e.stopPropagation();
-      const checked = e.target.checked;
-      if (checked) {
-        activeSet.add(h.id);
-        map.flyTo([h.lat, h.lng], 15, { duration: 0.8 });
-        showToast(`${h.name} xaritaga qo'shildi`);
-      } else {
-        activeSet.delete(h.id);
-        showToast(`${h.name} olib tashlandi`);
-      }
-      updateMarker(h.id, checked);
-      updateBadge();
-      item.classList.toggle('highlighted', checked);
+      if (e.target.checked) { activeSet.add(h.id); map.flyTo([h.lat,h.lng],17,{duration:0.8}); showToast(h.name+' belgilandi'); }
+      else { activeSet.delete(h.id); showToast(h.name+' olib tashlandi'); }
+      refreshMarker(h); updateBadge();
+      item.classList.toggle('highlighted', activeSet.has(h.id));
     });
-
     item.querySelector('.hotel-info').addEventListener('click', () => {
-      if (activeSet.has(h.id)) {
-        map.flyTo([h.lat, h.lng], 16, { duration: 0.8 });
-        markerMap[h.id].marker.openPopup();
-      }
+      map.flyTo([h.lat,h.lng],17,{duration:0.8});
+      if(markerMap[h.id]) markerMap[h.id].openPopup();
+      highlightItem(h.id);
     });
-
     list.appendChild(item);
   });
-
-  if (!sorted.length) {
-    list.innerHTML = `<div style="padding:32px 16px;text-align:center;color:var(--text3);font-size:14px;">Hech narsa topilmadi</div>`;
-  }
 }
 
 function updateBadge() {
   const pill = document.getElementById('active-pill');
-  if (activeSet.size > 0) {
-    pill.style.display = '';
-    pill.textContent = activeSet.size + ' belgilangan';
-  } else {
-    pill.style.display = 'none';
+  pill.style.display = activeSet.size > 0 ? '' : 'none';
+  pill.textContent = activeSet.size + ' belgilangan';
+}
+
+async function fetchHotels(lat, lng, radius) {
+  const list = document.getElementById('hotel-list');
+  list.innerHTML = `<div class="state-box"><div class="spinner"></div><div class="msg">Mehmonxonalar qidirilmoqda…</div><div class="sub">${radius >= 1000 ? (radius/1000).toFixed(1)+' km' : radius+' m'} radius ichida</div></div>`;
+
+  const q = `[out:json][timeout:25];(
+    node["tourism"="hotel"](around:${radius},${lat},${lng});
+    node["tourism"="motel"](around:${radius},${lat},${lng});
+    node["tourism"="hostel"](around:${radius},${lat},${lng});
+    node["tourism"="guest_house"](around:${radius},${lat},${lng});
+    node["tourism"="apartment"](around:${radius},${lat},${lng});
+    way["tourism"="hotel"](around:${radius},${lat},${lng});
+    way["tourism"="motel"](around:${radius},${lat},${lng});
+    way["tourism"="hostel"](around:${radius},${lat},${lng});
+    way["tourism"="guest_house"](around:${radius},${lat},${lng});
+  );out center;`;
+
+  try {
+    const res = await fetch('https://overpass-api.de/api/interpreter', { method:'POST', body:'data='+encodeURIComponent(q) });
+    const data = await res.json();
+    clearMarkers();
+
+    allHotels = data.elements
+      .filter(el => el.tags && (el.tags.name || el.tags['name:uz'] || el.tags['name:en'] || el.tags['name:ru']))
+      .map((el, i) => {
+        const elLat = el.lat ?? el.center?.lat;
+        const elLng = el.lon ?? el.center?.lon;
+        if (!elLat || !elLng) return null;
+        const t = el.tags;
+        const name = t['name:uz'] || t['name:en'] || t.name || t['name:ru'] || 'Nomsiz';
+        const type = t.tourism || 'hotel';
+        const typeLabel = TYPE_LABELS[type] || 'Hotel';
+        const rooms = t.rooms ? parseInt(t.rooms) : null;
+        const stars = t.stars ? Math.min(parseInt(t.stars), 5) : null;
+        const street = [t['addr:street'], t['addr:housenumber']].filter(Boolean).join(' ');
+        const addr = street || t['addr:full'] || t['addr:city'] || '';
+        return { id:'h'+i, name, lat:elLat, lng:elLng, type, typeLabel, rooms, stars, addr, dist: haversine(lat,lng,elLat,elLng) };
+      })
+      .filter(Boolean)
+      .sort((a,b) => a.dist - b.dist);
+
+    allHotels.forEach(h => addMarker(h, false));
+
+    if (!allHotels.length) {
+      list.innerHTML = `<div class="state-box"><div class="icon">😕</div><div class="msg">${radius>=1000?(radius/1000).toFixed(1)+' km':radius+' m'} ichida mehmonxona topilmadi</div><div class="sub">Radiusni kattaroq qilib ko'ring</div></div>`;
+      document.getElementById('count-badge').textContent = '0 ta';
+      return;
+    }
+
+    showToast('✓ ' + allHotels.length + ' ta mehmonxona topildi');
+    renderList(document.getElementById('search-input').value);
+  } catch(err) {
+    list.innerHTML = `<div class="state-box"><div class="icon">⚠️</div><div class="msg">Tarmoq xatosi yuz berdi</div><div class="sub">Internet aloqasini tekshiring va qayta urining</div></div>`;
   }
 }
+
+function getLocation() {
+  const btn = document.getElementById('loc-btn');
+  if (!navigator.geolocation) { showToast("GPS qo'llab-quvvatlanmaydi"); return; }
+  btn.classList.add('loading');
+  showToast("GPS aniqlanmoqda…");
+  navigator.geolocation.getCurrentPosition(pos => {
+    btn.classList.remove('loading');
+    userLat = pos.coords.latitude;
+    userLng = pos.coords.longitude;
+    placeUserMarker(userLat, userLng);
+    drawRadius(userLat, userLng, searchRadius);
+    map.flyTo([userLat, userLng], 14, { duration: 1 });
+    setTimeout(() => fetchHotels(userLat, userLng, searchRadius), 900);
+  }, () => {
+    btn.classList.remove('loading');
+    showToast("GPS ruxsati berilmadi");
+  }, { enableHighAccuracy: true, timeout: 12000 });
+}
+
+document.getElementById('loc-btn').addEventListener('click', getLocation);
+
+document.getElementById('radius-range').addEventListener('input', e => {
+  searchRadius = parseInt(e.target.value);
+  document.getElementById('radius-val').textContent = searchRadius < 1000 ? searchRadius+' m' : (searchRadius/1000).toFixed(1)+' km';
+  if (userLat) {
+    drawRadius(userLat, userLng, searchRadius);
+    clearTimeout(fetchDebounce);
+    fetchDebounce = setTimeout(() => fetchHotels(userLat, userLng, searchRadius), 900);
+  }
+});
+
+document.getElementById('search-input').addEventListener('input', e => renderList(e.target.value));
 
 let toastTimer;
 function showToast(msg) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
+  t.textContent = msg; t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-// Search
-document.getElementById('search-input').addEventListener('input', e => {
-  renderList(e.target.value);
-});
-
-// Geolocation
-document.getElementById('loc-btn').addEventListener('click', () => {
-  if (!navigator.geolocation) { showToast("Geolocation qo'llab-quvvatlanmaydi"); return; }
-  showToast("Joylashuv aniqlanmoqda...");
-  navigator.geolocation.getCurrentPosition(pos => {
-    userLat = pos.coords.latitude;
-    userLng = pos.coords.longitude;
-    placeUserMarker(userLat, userLng);
-    map.flyTo([userLat, userLng], 15, { duration: 1 });
-    renderList(document.getElementById('search-input').value);
-    showToast("Joylashuv aniqlandi ✓");
-  }, () => {
-    showToast("Joylashuvni aniqlab bo'lmadi");
-  });
-});
-
-renderList();
+window.addEventListener('load', () => setTimeout(getLocation, 500));
 </script>
 </body>
 </html>
