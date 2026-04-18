@@ -139,6 +139,12 @@
   .addr { font-size: 11px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 
   .item-actions { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+  .rooms-oval {
+    background: #2563eb; color: #fff;
+    border-radius: 20px; padding: 4px 10px;
+    font-size: 11px; font-weight: 600;
+    white-space: nowrap;
+  }
   .go-btn {
     display: flex; align-items: center; gap: 4px;
     background: #16a34a; color: #fff;
@@ -313,12 +319,12 @@ function renderList(query='') {
         <div class="hotel-sub">
           <span class="dist-badge">${fmtDist(h.dist)}</span>
           ${h.stars ? '<span class="stars">'+'★'.repeat(h.stars)+'☆'.repeat(5-h.stars)+'</span>' : ''}
-          ${h.rooms ? `<span class="badge">${h.rooms} xona</span>` : ''}
           <span class="type-badge">${h.typeLabel}</span>
         </div>
         ${h.addr ? `<div class="addr">${h.addr}</div>` : ''}
       </div>
       <div class="item-actions">
+        ${h.rooms ? `<span class="rooms-oval">${h.rooms} xona</span>` : ''}
         <a class="go-btn" href="https://www.google.com/maps/dir/?api=1&destination=${h.lat},${h.lng}" target="_blank" title="Google Maps'da yo'nalish">
           <svg width="11" height="11" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5" fill="#fff" stroke="none"/></svg>
           Go
