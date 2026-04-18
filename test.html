@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Uber Data Sequential Loader</title>
+    <title>Uber Parallel Progress</title>
     <style>
         body {
             margin: 0;
@@ -13,7 +13,7 @@
             align-items: center;
             min-height: 100vh;
             background-color: #000000;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, sans-serif;
             color: white;
             overflow: hidden;
         }
@@ -26,170 +26,199 @@
             align-items: center;
         }
 
-        /* Uber Logo */
+        /* Aylana progress */
+        .circle-box {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .progress-ring {
+            position: absolute;
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring__circle {
+            stroke: #FFFFFF;
+            stroke-width: 6;
+            fill: transparent;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.1s linear;
+        }
+
         .uber-logo {
-            width: 80px;
+            width: 70px;
+            fill: white;
+            z-index: 10;
+        }
+
+        /* Foiz matni */
+        #percent-display {
+            font-size: 1.5rem;
+            font-weight: bold;
             margin-bottom: 30px;
         }
 
-        /* Protsent va Aylana */
-        .progress-box {
-            position: relative;
-            margin-bottom: 40px;
-            text-align: center;
-        }
-
-        #percent-text {
-            font-size: 2.5rem;
-            font-weight: bold;
-            display: block;
-        }
-
-        /* Habarlar ro'yxati */
-        .messages-list {
+        /* Gorizontal progress bar */
+        .horizontal-bar-container {
             width: 100%;
-            height: 250px;
+            height: 6px;
+            background: #222;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 40px;
+        }
+
+        #horizontal-fill {
+            height: 100%;
+            width: 0%;
+            background: #28a745; /* Gorizontal bar yashil rangda */
+            transition: width 0.1s linear;
+        }
+
+        /* Xabarlar logi */
+        .log-container {
+            width: 100%;
+            height: 180px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            padding: 10px;
+            gap: 10px;
+            font-size: 0.85rem;
+            color: #888;
+            border-top: 1px solid #111;
+            padding-top: 15px;
         }
 
-        .message-item {
+        .log-item {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            font-size: 0.95rem;
-            color: #ccc;
-            opacity: 0;
-            transform: translateY(10px);
-            animation: slideIn 0.4s forwards;
-            border-bottom: 1px solid #222;
-            padding-bottom: 8px;
+            animation: fadeIn 0.3s forwards;
         }
 
-        .checkmark {
-            color: #28a745;
-            font-weight: bold;
-            font-size: 1.2rem;
-            margin-left: 10px;
-        }
+        .check { color: #28a745; }
 
-        /* Completed Tugmasi */
-        #completed-btn {
+        /* Yakuniy tugma */
+        #complete-btn {
             display: none;
-            margin-top: 20px;
-            background-color: #28a745;
+            width: 100%;
+            padding: 15px;
+            background: #28a745;
             color: white;
             border: none;
-            padding: 15px 50px;
-            font-size: 1.1rem;
+            border-radius: 5px;
             font-weight: bold;
-            border-radius: 8px;
+            font-size: 1rem;
             cursor: pointer;
-            width: 100%;
-            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            margin-top: 20px;
         }
 
-        /* Rahmat habari */
-        #thanks-screen {
+        #final-msg {
             display: none;
             text-align: center;
         }
 
-        /* Animatsiyalar */
-        @keyframes slideIn {
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
             to { opacity: 1; transform: translateY(0); }
         }
-
-        /* Scrollbarni chiroyli qilish */
-        .messages-list::-webkit-scrollbar { width: 3px; }
-        .messages-list::-webkit-scrollbar-thumb { background: #333; }
     </style>
 </head>
 <body>
 
-    <div class="container" id="main-loader">
-        <svg class="uber-logo" viewBox="0 0 244.75 84.81" fill="white">
-            <path d="M244.75 42.41c0 23.42-19 42.4-42.41 42.4s-42.41-19-42.41-42.4S178.93 0 202.34 0s42.41 18.99 42.41 42.41zm-68.51 0c0 14.39 11.68 26.11 26.1 26.11S228.44 56.8 228.44 42.41 216.76 16.3 202.34 16.3s-26.1 11.72-26.1 26.11zM149.33 58.71V1.82h16.3v79.4h-16.3v-5.69a26.1 26.1 0 0 1-21.57 9.28c-14.42 0-26.1-11.72-26.1-26.11S113.34 22.6 127.76 22.6a26 26 0 0 1 21.57 10.02zm-31.27-16.3c0 14.39 11.68 26.11 26.1 26.11s26.11-11.72 26.11-26.11S158.6 16.3 144.17 16.3s-26.1 11.72-26.1 26.11zM74.19 1.82h16.3V81.2H74.19v-5.69a26.11 26.11 0 0 1-21.57 9.3c-14.42 0-26.11-11.72-26.11-26.11S38.2 22.6 52.62 22.6a26.1 26.1 0 0 1 21.57 10.02zm-31.27 16.3c0 14.39 11.68 26.11 26.1 26.11s26.11-11.72 26.11-26.11S83.45 16.3 69 16.3s-26.1 11.72-26.11 26.11zM0 1.82h16.3V81.2H0z"/>
-        </svg>
-
-        <div class="progress-box">
-            <span id="percent-text">0%</span>
-            <div style="color: #666; font-size: 0.8rem; margin-top: 5px;">PROCESSING DATA...</div>
+    <div class="container" id="main-ui">
+        <div class="circle-box">
+            <svg class="progress-ring" width="180" height="180">
+                <circle cx="90" cy="90" r="85" stroke="#222" stroke-width="6" fill="transparent"/>
+                <circle id="circle-progress" class="progress-ring__circle" cx="90" cy="90" r="85"/>
+            </svg>
+            <svg class="uber-logo" viewBox="0 0 244.75 84.81">
+                <path d="M244.75 42.41c0 23.42-19 42.4-42.41 42.4s-42.41-19-42.41-42.4S178.93 0 202.34 0s42.41 18.99 42.41 42.41zm-68.51 0c0 14.39 11.68 26.11 26.1 26.11S228.44 56.8 228.44 42.41 216.76 16.3 202.34 16.3s-26.1 11.72-26.1 26.11zM149.33 58.71V1.82h16.3v79.4h-16.3v-5.69a26.1 26.1 0 0 1-21.57 9.28c-14.42 0-26.1-11.72-26.1-26.11S113.34 22.6 127.76 22.6a26 26 0 0 1 21.57 10.02zm-31.27-16.3c0 14.39 11.68 26.11 26.1 26.11s26.11-11.72 26.11-26.11S158.6 16.3 144.17 16.3s-26.1 11.72-26.1 26.11zM74.19 1.82h16.3V81.2H74.19v-5.69a26.11 26.11 0 0 1-21.57 9.3c-14.42 0-26.11-11.72-26.11-26.11S38.2 22.6 52.62 22.6a26.1 26.1 0 0 1 21.57 10.02zm-31.27 16.3c0 14.39 11.68 26.11 26.1 26.11s26.11-11.72 26.11-26.11S83.45 16.3 69 16.3s-26.1 11.72-26.11 26.11zM0 1.82h16.3V81.2H0z"/>
+            </svg>
         </div>
 
-        <div class="messages-list" id="log-list">
-            </div>
+        <div id="percent-display">0%</div>
 
-        <button id="completed-btn">Completed</button>
+        <div class="horizontal-bar-container">
+            <div id="horizontal-fill"></div>
+        </div>
+
+        <div class="log-container" id="logs"></div>
+
+        <button id="complete-btn">Completed</button>
     </div>
 
-    <div id="thanks-screen">
-        <h1 style="color: #28a745; font-size: 4rem; margin-bottom: 10px;">✓</h1>
-        <h2>Muvaffaqiyatli!</h2>
-        <p style="color: #888; margin-top: 10px;">Barcha Uber ma'lumotlari saqlandi.</p>
+    <div id="final-msg">
+        <h1 style="color:#28a745">✓</h1>
+        <h2>Rahmat!</h2>
+        <p>Jarayon muvaffaqiyatli yakunlandi.</p>
     </div>
 
     <script>
-        const logList = document.getElementById('log-list');
-        const percentText = document.getElementById('percent-text');
-        const completedBtn = document.getElementById('completed-btn');
-        const mainLoader = document.getElementById('main-loader');
-        const thanksScreen = document.getElementById('thanks-screen');
+        const circle = document.getElementById('circle-progress');
+        const horizontal = document.getElementById('horizontal-fill');
+        const percentText = document.getElementById('percent-display');
+        const logs = document.getElementById('logs');
+        const btn = document.getElementById('complete-btn');
+        
+        const radius = circle.r.baseVal.value;
+        const circumference = 2 * Math.PI * radius;
+        circle.style.strokeDasharray = `${circumference} ${circumference}`;
+        circle.style.strokeDashoffset = circumference;
 
-        const tasks = [
-            "Uber tizimiga kirish...",
-            "Profil ma'lumotlari yuklanmoqda...",
-            "Safar tarixi ko'chirilmoqda...",
-            "To'lov kvitansiyalari analiz qilinmoqda...",
-            "GPS koordinatalari tekshirilmoqda...",
-            "Haydovchi reytinglari filtrlanyapti...",
-            "Xavfsizlik protokoli o'rnatilmoqda...",
-            "Kesh fayllar tozalanmoqda...",
-            "Server bilan sinxronizatsiya...",
-            "Ma'lumotlar bazasiga yozilmoqda..."
+        const messages = [
+            "Uber bazasiga ulanish...",
+            "Shaxsiy ma'lumotlar tekshirilmoqda...",
+            "Safar hujjatlari ko'chirilmoqda...",
+            "Analiz jarayoni boshlandi...",
+            "GPS nuqtalari yuklanmoqda...",
+            "Tranzaksiyalar sinxronlanmoqda...",
+            "Reyting tizimi yangilanmoqda...",
+            "Xavfsizlik protokoli faol...",
+            "Bulutli saqlashga yozilmoqda...",
+            "Yakuniy tekshiruv..."
         ];
 
-        let currentTask = 0;
-        const totalTasks = tasks.length;
+        let progress = 0;
+        let taskIndex = 0;
 
-        function startLoading() {
-            const interval = setInterval(() => {
-                if (currentTask < totalTasks) {
-                    // Yangi xabar yaratish
-                    const item = document.createElement('div');
-                    item.className = 'message-item';
-                    item.innerHTML = `<span>${tasks[currentTask]}</span><span class="checkmark">✓</span>`;
-                    logList.appendChild(item);
+        const interval = setInterval(() => {
+            progress += 1;
+            
+            // 1. Matnni yangilash
+            percentText.textContent = progress + "%";
 
-                    // Oxiriga tushirish (scroll)
-                    logList.scrollTop = logList.scrollHeight;
+            // 2. Aylana progress
+            const offset = circumference - (progress / 100 * circumference);
+            circle.style.strokeDashoffset = offset;
 
-                    // Protsentni oshirish
-                    currentTask++;
-                    const progress = Math.round((currentTask / totalTasks) * 100);
-                    percentText.textContent = progress + "%";
+            // 3. Gorizontal progress
+            horizontal.style.width = progress + "%";
 
-                    if (currentTask === totalTasks) {
-                        setTimeout(() => {
-                            completedBtn.style.display = 'block';
-                        }, 500);
-                    }
-                } else {
-                    clearInterval(interval);
-                }
-            }, 1000); // Har 1 soniyada bitta habar chiqadi
-        }
+            // 4. Xabarlarni chiqarish (har 10% da bittadan)
+            if (progress % 10 === 0 && taskIndex < messages.length) {
+                const item = document.createElement('div');
+                item.className = 'log-item';
+                item.innerHTML = `<span>${messages[taskIndex]}</span><span class="check">✓</span>`;
+                logs.appendChild(item);
+                logs.scrollTop = logs.scrollHeight;
+                taskIndex++;
+            }
 
-        completedBtn.addEventListener('click', () => {
-            mainLoader.style.display = 'none';
-            thanksScreen.style.display = 'block';
+            if (progress >= 100) {
+                clearInterval(interval);
+                btn.style.display = 'block';
+            }
+        }, 100); // Jami 10 soniya atrofida davom etadi
+
+        btn.addEventListener('click', () => {
+            document.getElementById('main-ui').style.display = 'none';
+            document.getElementById('final-msg').style.display = 'block';
         });
-
-        // Jarayonni boshlash
-        window.onload = startLoading;
     </script>
 </body>
 </html>
