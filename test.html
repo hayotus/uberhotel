@@ -1,218 +1,449 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Uber Parallel Progress</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background-color: #000000;
-            font-family: -apple-system, sans-serif;
-            color: white;
-            overflow: hidden;
-        }
-
-        .container {
-            width: 90%;
-            max-width: 400px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        /* Aylana progress */
-        .circle-box {
-            position: relative;
-            width: 180px;
-            height: 180px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .progress-ring {
-            position: absolute;
-            transform: rotate(-90deg);
-        }
-
-        .progress-ring__circle {
-            stroke: #FFFFFF;
-            stroke-width: 6;
-            fill: transparent;
-            stroke-linecap: round;
-            transition: stroke-dashoffset 0.1s linear;
-        }
-
-        /* O'zgartirilgan rasm qismi */
-        .uber-logo {
-            width: 80px;
-            height: auto;
-            z-index: 10;
-            object-fit: contain;
-        }
-
-        /* Foiz matni */
-        #percent-display {
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-bottom: 30px;
-        }
-
-        /* Gorizontal progress bar */
-        .horizontal-bar-container {
-            width: 100%;
-            height: 6px;
-            background: #222;
-            border-radius: 10px;
-            overflow: hidden;
-            margin-bottom: 40px;
-        }
-
-        #horizontal-fill {
-            height: 100%;
-            width: 0%;
-            background: #28a745; 
-            transition: width 0.1s linear;
-        }
-
-        /* Xabarlar logi */
-        .log-container {
-            width: 100%;
-            height: 180px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            font-size: 0.85rem;
-            color: #888;
-            border-top: 1px solid #111;
-            padding-top: 15px;
-        }
-
-        .log-item {
-            display: flex;
-            justify-content: space-between;
-            animation: fadeIn 0.3s forwards;
-        }
-
-        .check { color: #28a745; }
-
-        #complete-btn {
-            display: none;
-            width: 100%;
-            padding: 15px;
-            background: #28a745;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-weight: bold;
-            font-size: 1rem;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-
-        #final-msg {
-            display: none;
-            text-align: center;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uber Enterprise Sync</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;padding:20px;}
+:root{
+  --color-background-primary:#ffffff;
+  --color-background-secondary:#f9f9f9;
+  --color-background-success:#e8f9ee;
+  --color-background-warning:#fff8e6;
+  --color-background-info:#e6f1fb;
+  --color-background-danger:#fcebeb;
+  --color-text-primary:#111111;
+  --color-text-secondary:#555555;
+  --color-text-tertiary:#999999;
+  --color-text-success:#1a7a3c;
+  --color-text-warning:#a05c00;
+  --color-text-info:#185fa5;
+  --color-text-danger:#a32d2d;
+  --color-border-tertiary:rgba(0,0,0,0.1);
+  --color-border-secondary:rgba(0,0,0,0.2);
+  --color-border-success:rgba(26,122,60,0.4);
+  --color-border-warning:rgba(160,92,0,0.3);
+  --color-border-danger:rgba(163,45,45,0.4);
+  --border-radius-md:8px;
+  --border-radius-lg:12px;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --color-background-primary:#1a1a1a;
+    --color-background-secondary:#242424;
+    --color-background-success:#0d2e1a;
+    --color-background-warning:#2e1f00;
+    --color-background-info:#0a1e35;
+    --color-background-danger:#2e0d0d;
+    --color-text-primary:#f0f0f0;
+    --color-text-secondary:#aaaaaa;
+    --color-text-tertiary:#666666;
+    --color-text-success:#4ade80;
+    --color-text-warning:#fbbf24;
+    --color-text-info:#60a5fa;
+    --color-text-danger:#f87171;
+    --color-border-tertiary:rgba(255,255,255,0.1);
+    --color-border-secondary:rgba(255,255,255,0.2);
+    --color-border-success:rgba(74,222,128,0.4);
+    --color-border-warning:rgba(251,191,36,0.3);
+    --color-border-danger:rgba(248,113,113,0.4);
+  }
+  body{background:#111;}
+}
+.shell{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;background:var(--color-background-primary);max-width:900px;margin:0 auto;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);}
+.tb-left{display:flex;align-items:center;gap:10px;}
+.u-sq{width:30px;height:30px;border-radius:6px;background:var(--color-text-primary);display:flex;align-items:center;justify-content:center;color:var(--color-background-primary);font-size:15px;font-weight:500;flex-shrink:0;}
+.tb-title{font-size:13px;font-weight:500;color:var(--color-text-primary);}
+.tb-sub{font-size:10px;color:var(--color-text-tertiary);}
+.tb-right{display:flex;align-items:center;gap:12px;}
+.live-pill{display:flex;align-items:center;gap:4px;background:var(--color-background-success);border-radius:20px;padding:3px 9px;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--color-text-success);animation:blink 1.2s infinite;}
+.live-txt{font-size:10px;font-weight:500;color:var(--color-text-success);}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.clock{font-size:11px;color:var(--color-text-tertiary);font-variant-numeric:tabular-nums;}
+.session-id{font-size:10px;color:var(--color-text-tertiary);background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);padding:2px 8px;border-radius:4px;}
+.paused-pill{display:none;align-items:center;gap:4px;background:var(--color-background-warning);border-radius:20px;padding:3px 9px;}
+.paused-txt{font-size:10px;font-weight:500;color:var(--color-text-warning);}
+.body{padding:14px 16px;display:flex;flex-direction:column;gap:12px;}
+.row{display:grid;gap:8px;}
+.cols8{grid-template-columns:repeat(8,minmax(0,1fr));}
+.cols4{grid-template-columns:repeat(4,minmax(0,1fr));}
+.cols3{grid-template-columns:repeat(3,minmax(0,1fr));}
+.cols2{grid-template-columns:repeat(2,minmax(0,1fr));}
+.col2span{grid-column:span 2;}
+.sec-label{font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px;}
+.mc{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:9px 11px;}
+.mc-lbl{font-size:10px;color:var(--color-text-tertiary);margin-bottom:3px;}
+.mc-val{font-size:16px;font-weight:500;color:var(--color-text-primary);line-height:1;}
+.mc-val.g{color:var(--color-text-success);}
+.mc-val.a{color:var(--color-text-warning);}
+.mc-val.b{color:var(--color-text-info);}
+.mc-val.r{color:var(--color-text-danger);}
+.mc-sub{font-size:10px;color:var(--color-text-tertiary);margin-top:2px;}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:11px 13px;}
+.circle-wrap{display:flex;align-items:center;gap:16px;}
+.cbox{position:relative;width:130px;height:130px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ring-svg{position:absolute;top:0;left:0;transform:rotate(-90deg);}
+.center-stack{display:flex;flex-direction:column;align-items:center;z-index:2;}
+.pct-main{font-size:22px;font-weight:500;color:var(--color-text-primary);line-height:1;}
+.pct-lbl{font-size:10px;color:var(--color-text-tertiary);margin-top:2px;}
+.mini-bars{display:flex;flex-direction:column;gap:6px;flex:1;}
+.mbl{display:flex;justify-content:space-between;}
+.mbn{font-size:11px;color:var(--color-text-secondary);}
+.mbv{font-size:11px;font-weight:500;color:var(--color-text-primary);}
+.mbt{width:100%;height:3px;background:var(--color-border-tertiary);border-radius:3px;overflow:hidden;margin-top:2px;}
+.mbf{height:100%;border-radius:3px;transition:width 0.12s linear;}
+.hbar-wrap{width:100%;height:5px;background:var(--color-border-tertiary);border-radius:5px;overflow:hidden;}
+.hbar-fill{height:100%;background:var(--color-text-primary);border-radius:5px;transition:width 0.12s linear;}
+.steps-wrap{display:flex;gap:3px;}
+.seg{flex:1;height:3px;border-radius:3px;background:var(--color-border-tertiary);transition:background 0.3s;}
+.seg.on{background:var(--color-text-success);}
+.seg.cur{background:var(--color-text-warning);}
+.log-panel{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden;}
+.log-hd{display:flex;justify-content:space-between;align-items:center;padding:7px 11px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);}
+.log-hd-l{font-size:10px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.5px;}
+.badge{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500;}
+.badge-info{background:var(--color-background-info);color:var(--color-text-info);}
+.badge-ok{background:var(--color-background-success);color:var(--color-text-success);}
+.log-body{max-height:130px;overflow-y:auto;}
+.log-row{display:flex;align-items:center;gap:8px;padding:6px 11px;border-bottom:0.5px solid var(--color-border-tertiary);animation:fup .25s ease forwards;}
+.log-row:last-child{border-bottom:none;}
+.log-ico{width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.log-ico svg{width:8px;height:8px;}
+.log-txt{flex:1;font-size:11px;color:var(--color-text-secondary);}
+.log-mod{font-size:10px;color:var(--color-text-tertiary);min-width:60px;text-align:right;}
+.log-ts{font-size:10px;color:var(--color-text-tertiary);min-width:22px;text-align:right;font-variant-numeric:tabular-nums;}
+.net-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;}
+.net-card{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:8px 10px;}
+.net-name{font-size:10px;color:var(--color-text-tertiary);margin-bottom:4px;}
+.net-bar{height:3px;background:var(--color-border-tertiary);border-radius:3px;overflow:hidden;margin-bottom:4px;}
+.net-bar-fill{height:100%;border-radius:3px;transition:width .12s linear;}
+.net-stat{font-size:11px;font-weight:500;color:var(--color-text-primary);}
+.net-sub{font-size:10px;color:var(--color-text-tertiary);}
+.alert-row{display:flex;align-items:center;gap:6px;background:var(--color-background-warning);border:0.5px solid var(--color-border-warning);border-radius:var(--border-radius-md);padding:7px 11px;animation:fup .3s ease forwards;}
+.alert-ico svg{width:14px;height:14px;stroke:var(--color-text-warning);fill:none;stroke-width:2;}
+.alert-txt{font-size:11px;color:var(--color-text-warning);}
+.alert-ts{font-size:10px;color:var(--color-text-warning);margin-left:auto;opacity:0.7;}
+.action-row{display:flex;gap:8px;}
+.btn-sec{flex:1;padding:9px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:12px;font-weight:500;color:var(--color-text-secondary);cursor:pointer;}
+.btn-sec:hover{opacity:0.8;}
+.btn-pri{flex:2;padding:9px;background:var(--color-text-primary);border:none;border-radius:var(--border-radius-md);font-size:12px;font-weight:500;color:var(--color-background-primary);cursor:pointer;display:none;}
+.btn-pri:hover{opacity:0.85;}
+.btn-danger{flex:1;padding:9px;background:transparent;border:0.5px solid var(--color-border-danger);border-radius:var(--border-radius-md);font-size:12px;font-weight:500;color:var(--color-text-danger);cursor:pointer;}
+.final{display:none;flex-direction:column;align-items:center;padding:2.5rem 1rem;gap:14px;text-align:center;}
+.final-ring{width:60px;height:60px;border-radius:50%;border:1.5px solid var(--color-border-success);display:flex;align-items:center;justify-content:center;}
+.final-ring svg{width:24px;height:24px;stroke:var(--color-text-success);stroke-width:2;fill:none;}
+.restart-btn{padding:9px 26px;background:var(--color-text-primary);color:var(--color-background-primary);border:none;border-radius:var(--border-radius-md);font-size:12px;font-weight:500;cursor:pointer;margin-top:4px;}
+@keyframes fup{from{opacity:0;transform:translateY(3px);}to{opacity:1;transform:translateY(0);}}
+</style>
 </head>
 <body>
 
-    <div class="container" id="main-ui">
-        <div class="circle-box">
-            <svg class="progress-ring" width="180" height="180">
-                <circle cx="90" cy="90" r="85" stroke="#222" stroke-width="6" fill="transparent"/>
-                <circle id="circle-progress" class="progress-ring__circle" cx="90" cy="90" r="85"/>
+<div class="shell" id="mainShell">
+  <div class="topbar">
+    <div class="tb-left">
+      <div class="u-sq">U</div>
+      <div>
+        <div class="tb-title">Uber Enterprise Sync</div>
+        <div class="tb-sub">Production · Region: EU-West-1</div>
+      </div>
+    </div>
+    <div class="tb-right">
+      <div class="paused-pill" id="pausedPill"><span class="paused-txt">PAUSED</span></div>
+      <div class="live-pill" id="livePill"><div class="live-dot"></div><span class="live-txt">LIVE</span></div>
+      <div class="clock" id="clockEl">00:00</div>
+      <div class="session-id">#UB-ENT-2024-8841</div>
+    </div>
+  </div>
+
+  <div class="body">
+    <div>
+      <div class="sec-label">Umumiy ko'rsatkichlar</div>
+      <div class="row cols8">
+        <div class="mc col2span"><div class="mc-lbl">Umumiy jarayon</div><div class="mc-val" id="m0">0%</div><div class="mc-sub" id="m0s">~10s qoldi</div></div>
+        <div class="mc"><div class="mc-lbl">Bajarildi</div><div class="mc-val g" id="m1">0/20</div><div class="mc-sub">amallar</div></div>
+        <div class="mc"><div class="mc-lbl">Tezlik</div><div class="mc-val a" id="m2">10%/s</div><div class="mc-sub">joriy</div></div>
+        <div class="mc"><div class="mc-lbl">O'tgan vaqt</div><div class="mc-val" id="m3">0s</div><div class="mc-sub">real-time</div></div>
+        <div class="mc"><div class="mc-lbl">So'rovlar</div><div class="mc-val b" id="m4">0</div><div class="mc-sub">API calls</div></div>
+        <div class="mc"><div class="mc-lbl">Xatolar</div><div class="mc-val r" id="m5">0</div><div class="mc-sub">errors</div></div>
+      </div>
+    </div>
+
+    <div class="row cols2">
+      <div class="card">
+        <div class="sec-label">Asosiy progress</div>
+        <div class="circle-wrap">
+          <div class="cbox">
+            <svg class="ring-svg" width="130" height="130">
+              <circle cx="65" cy="65" r="58" stroke="var(--color-border-tertiary)" stroke-width="6" fill="transparent"/>
+              <circle id="ringFill" cx="65" cy="65" r="58" stroke="var(--color-text-primary)" stroke-width="6" fill="transparent" stroke-linecap="round"/>
             </svg>
-            <img src="src/uber.jpg" class="uber-logo" alt="Uber Logo">
+            <div class="center-stack">
+              <div class="pct-main" id="ringPct">0%</div>
+              <div class="pct-lbl" id="ringLbl">Kutilmoqda</div>
+            </div>
+          </div>
+          <div class="mini-bars">
+            <div class="mbl"><span class="mbn">API ulanish</span><span class="mbv" id="pb0">0%</span></div>
+            <div class="mbt"><div class="mbf" id="pf0" style="width:0%;background:var(--color-text-info);"></div></div>
+            <div class="mbl"><span class="mbn">Autentifikatsiya</span><span class="mbv" id="pb1">0%</span></div>
+            <div class="mbt"><div class="mbf" id="pf1" style="width:0%;background:var(--color-text-success);"></div></div>
+            <div class="mbl"><span class="mbn">Ma'lumot uzatish</span><span class="mbv" id="pb2">0%</span></div>
+            <div class="mbt"><div class="mbf" id="pf2" style="width:0%;background:var(--color-text-warning);"></div></div>
+            <div class="mbl"><span class="mbn">Xavfsizlik skaneri</span><span class="mbv" id="pb3">0%</span></div>
+            <div class="mbt"><div class="mbf" id="pf3" style="width:0%;background:#A78BFA;"></div></div>
+            <div class="mbl"><span class="mbn">Bulut sinxron</span><span class="mbv" id="pb4">0%</span></div>
+            <div class="mbt"><div class="mbf" id="pf4" style="width:0%;background:#FB923C;"></div></div>
+            <div class="mbl"><span class="mbn">GPS optimizatsiya</span><span class="mbv" id="pb5">0%</span></div>
+            <div class="mbt"><div class="mbf" id="pf5" style="width:0%;background:#38BDF8;"></div></div>
+          </div>
         </div>
+      </div>
 
-        <div id="percent-display">0%</div>
-
-        <div class="horizontal-bar-container">
-            <div id="horizontal-fill"></div>
+      <div class="card">
+        <div class="sec-label">Tarmoq holati</div>
+        <div class="net-grid">
+          <div class="net-card"><div class="net-name">API Gateway</div><div class="net-bar"><div class="net-bar-fill" id="n0" style="background:var(--color-text-success);width:0%"></div></div><div class="net-stat" id="n0v">0ms</div><div class="net-sub">latency</div></div>
+          <div class="net-card"><div class="net-name">Database</div><div class="net-bar"><div class="net-bar-fill" id="n1" style="background:var(--color-text-info);width:0%"></div></div><div class="net-stat" id="n1v">0ms</div><div class="net-sub">query time</div></div>
+          <div class="net-card"><div class="net-name">CDN Edge</div><div class="net-bar"><div class="net-bar-fill" id="n2" style="background:#A78BFA;width:0%"></div></div><div class="net-stat" id="n2v">0%</div><div class="net-sub">cache hit</div></div>
+          <div class="net-card"><div class="net-name">WebSocket</div><div class="net-bar"><div class="net-bar-fill" id="n3" style="background:#FB923C;width:0%"></div></div><div class="net-stat" id="n3v">0</div><div class="net-sub">connections</div></div>
+          <div class="net-card"><div class="net-name">Bandwidth</div><div class="net-bar"><div class="net-bar-fill" id="n4" style="background:var(--color-text-warning);width:0%"></div></div><div class="net-stat" id="n4v">0 MB/s</div><div class="net-sub">throughput</div></div>
+          <div class="net-card"><div class="net-name">Queue</div><div class="net-bar"><div class="net-bar-fill" id="n5" style="background:#38BDF8;width:0%"></div></div><div class="net-stat" id="n5v">0</div><div class="net-sub">pending jobs</div></div>
+          <div class="net-card"><div class="net-name">CPU Load</div><div class="net-bar"><div class="net-bar-fill" id="n6" style="background:var(--color-text-success);width:0%"></div></div><div class="net-stat" id="n6v">0%</div><div class="net-sub">server load</div></div>
+          <div class="net-card"><div class="net-name">Memory</div><div class="net-bar"><div class="net-bar-fill" id="n7" style="background:var(--color-text-danger);width:0%"></div></div><div class="net-stat" id="n7v">0 GB</div><div class="net-sub">RAM used</div></div>
         </div>
-
-        <div class="log-container" id="logs"></div>
-
-        <button id="complete-btn">Completed</button>
+      </div>
     </div>
 
-    <div id="final-msg">
-        <h1 style="color:#28a745">✓</h1>
-        <h2>Rahmat!</h2>
-        <p>Jarayon muvaffaqiyatli yakunlandi.</p>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div class="sec-label" style="margin:0;">Umumiy progress & ETA</div>
+        <span style="font-size:11px;font-weight:500;color:var(--color-text-primary);" id="bigPct2">0%</span>
+      </div>
+      <div class="hbar-wrap"><div class="hbar-fill" id="bigBar"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:5px;">
+        <span style="font-size:10px;color:var(--color-text-tertiary);">Boshlandi</span>
+        <span style="font-size:10px;color:var(--color-text-tertiary);" id="etaTxt">~10s qoldi</span>
+        <span style="font-size:10px;color:var(--color-text-tertiary);">100%</span>
+      </div>
     </div>
 
-    <script>
-        const circle = document.getElementById('circle-progress');
-        const horizontal = document.getElementById('horizontal-fill');
-        const percentText = document.getElementById('percent-display');
-        const logs = document.getElementById('logs');
-        const btn = document.getElementById('complete-btn');
-        
-        const radius = circle.r.baseVal.value;
-        const circumference = 2 * Math.PI * radius;
-        circle.style.strokeDasharray = `${circumference} ${circumference}`;
-        circle.style.strokeDashoffset = circumference;
+    <div>
+      <div class="sec-label">Bosqichlar (20 ta)</div>
+      <div class="steps-wrap" id="stepsWrap"></div>
+    </div>
 
-        const messages = [
-            "Uber bazasiga ulanish...",
-            "Shaxsiy ma'lumotlar tekshirilmoqda...",
-            "Safar hujjatlari ko'chirilmoqda...",
-            "Analiz jarayoni boshlandi...",
-            "GPS nuqtalari yuklanmoqda...",
-            "Tranzaksiyalar sinxronlanmoqda...",
-            "Reyting tizimi yangilanmoqda...",
-            "Xavfsizlik protokoli faol...",
-            "Bulutli saqlashga yozilmoqda...",
-            "Yakuniy tekshiruv..."
-        ];
+    <div id="alertContainer"></div>
 
-        let progress = 0;
-        let taskIndex = 0;
+    <div class="row cols2">
+      <div class="log-panel">
+        <div class="log-hd"><span class="log-hd-l">Tizim logi</span><span class="badge badge-info" id="logBadge">0 ta</span></div>
+        <div class="log-body" id="logBody"></div>
+      </div>
+      <div class="log-panel">
+        <div class="log-hd"><span class="log-hd-l">Xavfsizlik auditi</span><span class="badge badge-ok" id="auditBadge">0 ta</span></div>
+        <div class="log-body" id="auditBody"></div>
+      </div>
+    </div>
 
-        const interval = setInterval(() => {
-            progress += 1;
-            percentText.textContent = progress + "%";
+    <div class="row cols3">
+      <div class="mc"><div class="mc-lbl">Muvaffaqiyat darajasi</div><div class="mc-val g" id="sRate">100%</div><div class="mc-sub">success rate</div></div>
+      <div class="mc"><div class="mc-lbl">Jami uzatildi</div><div class="mc-val b" id="transferred">0 KB</div><div class="mc-sub">data transferred</div></div>
+      <div class="mc"><div class="mc-lbl">Sessiya holati</div><div class="mc-val" id="sessState">Faol</div><div class="mc-sub">joriy holat</div></div>
+    </div>
 
-            const offset = circumference - (progress / 100 * circumference);
-            circle.style.strokeDashoffset = offset;
+    <div class="action-row">
+      <button class="btn-danger" id="cancelBtn">Bekor qilish</button>
+      <button class="btn-sec" id="pauseBtn">Pauza</button>
+      <button class="btn-pri" id="doneBtn">Yakunlash</button>
+    </div>
+  </div>
+</div>
 
-            horizontal.style.width = progress + "%";
+<div class="final" id="finalScreen">
+  <div class="final-ring"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+  <div style="font-size:17px;font-weight:500;color:var(--color-text-primary);">Muvaffaqiyatli yakunlandi</div>
+  <div style="font-size:12px;color:var(--color-text-secondary);">#UB-ENT-2024-8841 — Barcha 20 ta amal tasdiqlandi</div>
+  <div class="row cols4" style="width:100%;margin-top:4px;">
+    <div class="mc"><div class="mc-lbl">Vaqt</div><div class="mc-val" id="fTime">—</div></div>
+    <div class="mc"><div class="mc-lbl">Amallar</div><div class="mc-val g">20/20</div></div>
+    <div class="mc"><div class="mc-lbl">Xatolar</div><div class="mc-val g">0</div></div>
+    <div class="mc"><div class="mc-lbl">Status</div><div class="mc-val g">OK</div></div>
+  </div>
+  <button class="restart-btn" onclick="restart()">Qayta boshlash</button>
+</div>
 
-            if (progress % 10 === 0 && taskIndex < messages.length) {
-                const item = document.createElement('div');
-                item.className = 'log-item';
-                item.innerHTML = `<span>${messages[taskIndex]}</span><span class="check">✓</span>`;
-                logs.appendChild(item);
-                logs.scrollTop = logs.scrollHeight;
-                taskIndex++;
-            }
+<script>
+const TOTAL=20;
+const msgs=[
+  ["API Gateway serverga ulanildi","Auth"],["JWT token tekshirildi","Auth"],
+  ["Foydalanuvchi profili yuklandi","Data"],["Safar tarixi ko'chirildi","Data"],
+  ["GPS ma'lumotlari optimizatsiya qilindi","GPS"],["Marshrutlar qayta hisoblandi","GPS"],
+  ["Tranzaksiyalar sinxronlandi","Finance"],["To'lov usullari tasdiqlandi","Finance"],
+  ["Reyting tizimi yangilandi","Rating"],["Haydovchi balli hisoblandi","Rating"],
+  ["Xavfsizlik skaneri o'tkazildi","Security"],["Anomaliyalar aniqlanmadi","Security"],
+  ["Bulut saqlashga yozildi","Cloud"],["CDN keshi yangilandi","Cloud"],
+  ["WebSocket ulanishlari barqarorlashdi","Network"],["API limitlar tekshirildi","Network"],
+  ["Ma'lumotlar zaxirasi yaratildi","Backup"],["Zaxira fayli tasdiqlandi","Backup"],
+  ["Monitoring agentlari xabar berdi","Monitor"],["Barcha modullar sinxronlashdi","Final"]
+];
+const auditMsgs=[
+  "TLS 1.3 shifrlash tasdiqlandi","SQL injection skaneri: toza",
+  "XSS filtri faollashtirildi","CSRF token yangilandi",
+  "Ruxsatsiz ulanish urinishi bloklandi","2FA autentifikatsiya o'tdi",
+  "Firewall qoidalari yangilandi","IP whitelist tekshirildi",
+  "Data masking faollashtirildi","Audit logi imzolandi",
+  "Sertifikat muddati: 89 kun","Parol kuchi: A+",
+  "Session timeout sozlandi","Rate limiting faol",
+  "GDPR muvofiqlik tekshirildi","SOC2 nazorat o'tdi",
+  "PCI-DSS standartlari tasdiqlandi","Penetration test: yashil",
+  "Vulnerability scan: 0 topildi","Barcha xavfsizlik testlari o'tdi"
+];
 
-            if (progress >= 100) {
-                clearInterval(interval);
-                btn.style.display = 'block';
-            }
-        }, 100);
+const ringFill=document.getElementById('ringFill');
+const r=58,circ=2*Math.PI*r;
+ringFill.style.strokeDasharray=`${circ} ${circ}`;
+ringFill.style.strokeDashoffset=circ;
 
-        btn.addEventListener('click', () => {
-            document.getElementById('main-ui').style.display = 'none';
-            document.getElementById('final-msg').style.display = 'block';
-        });
-    </script>
+for(let i=0;i<TOTAL;i++){
+  const s=document.createElement('div');
+  s.className='seg';s.id='seg'+i;
+  document.getElementById('stepsWrap').appendChild(s);
+}
+
+let progress=0,taskIdx=0,elapsed=0,paused=false,apiCalls=0,transferred=0,timer,clockTimer;
+const startTime=Date.now();
+const offsets=[0,5,15,25,35,45];
+const fills=[1.1,1.2,1.3,1.4,1.5,1.7];
+
+function fmtClock(ms){
+  const s=Math.floor(ms/1000),m=Math.floor(s/60);
+  return String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+}
+
+clockTimer=setInterval(()=>{
+  if(!paused) document.getElementById('clockEl').textContent=fmtClock(Date.now()-startTime);
+},500);
+
+function addLog(text,mod,body,badge){
+  const row=document.createElement('div');
+  row.className='log-row';
+  row.innerHTML=`<div class="log-ico" style="background:var(--color-background-success)"><svg viewBox="0 0 24 24" style="stroke:var(--color-text-success);fill:none;stroke-width:2.5"><polyline points="20 6 9 17 4 12"/></svg></div><div class="log-txt">${text}</div><span class="log-mod">${mod}</span><span class="log-ts">${elapsed}s</span>`;
+  body.appendChild(row);
+  body.scrollTop=9999;
+  badge.textContent=body.querySelectorAll('.log-row').length+' ta';
+}
+
+function addAlert(text){
+  const a=document.createElement('div');
+  a.className='alert-row';
+  a.innerHTML=`<div class="alert-ico"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div class="alert-txt">${text}</div><span class="alert-ts">${elapsed}s</span>`;
+  document.getElementById('alertContainer').appendChild(a);
+  setTimeout(()=>a.remove(),4000);
+}
+
+function tick(){
+  if(paused) return;
+  progress++;elapsed++;
+  apiCalls+=Math.floor(Math.random()*3)+2;
+  transferred+=Math.floor(Math.random()*80)+40;
+
+  const p=Math.min(progress,100);
+  document.getElementById('m0').textContent=p+'%';
+  document.getElementById('ringPct').textContent=p+'%';
+  document.getElementById('bigBar').style.width=p+'%';
+  document.getElementById('bigPct2').textContent=p+'%';
+  ringFill.style.strokeDashoffset=circ-(p/100*circ);
+
+  const rem=Math.max(0,Math.round((100-p)/10));
+  document.getElementById('m0s').textContent=rem>0?'~'+rem+'s qoldi':'Tugayapti...';
+  document.getElementById('etaTxt').textContent=rem>0?'~'+rem+'s qoldi':'Tugayapti...';
+  document.getElementById('m3').textContent=elapsed+'s';
+  document.getElementById('m4').textContent=apiCalls;
+  document.getElementById('transferred').textContent=transferred>1024?Math.round(transferred/102.4)/10+' MB':transferred+' KB';
+
+  if(p<25) document.getElementById('ringLbl').textContent='Boshlandi';
+  else if(p<60) document.getElementById('ringLbl').textContent='Davom etmoqda';
+  else if(p<90) document.getElementById('ringLbl').textContent='Yakunlanmoqda';
+  else document.getElementById('ringLbl').textContent='Tugayapti';
+
+  for(let i=0;i<6;i++){
+    const v=Math.min(Math.max(p-offsets[i],0)*fills[i],100);
+    document.getElementById('pf'+i).style.width=v+'%';
+    document.getElementById('pb'+i).textContent=Math.round(v)+'%';
+  }
+
+  const n0v=Math.round(12+Math.random()*8);
+  const n1v=Math.round(3+Math.random()*5);
+  const n2v=Math.min(Math.round(p*0.92),97);
+  const n3v=Math.round(Math.min(p*0.45,40));
+  const n4v=(Math.random()*1.8+0.4).toFixed(1);
+  const n5v=Math.max(0,Math.round(20-p*0.18));
+  const n6v=Math.round(25+p*0.4+Math.random()*8);
+  const n7v=(1.2+p*0.018).toFixed(1);
+  [{id:'n0',w:Math.min(n0v*4,100),v:n0v+'ms'},{id:'n1',w:Math.min(n1v*10,100),v:n1v+'ms'},
+   {id:'n2',w:n2v,v:n2v+'%'},{id:'n3',w:Math.min(n3v*2.5,100),v:n3v},
+   {id:'n4',w:Math.min(n4v*40,100),v:n4v+' MB/s'},{id:'n5',w:Math.min(n5v*5,100),v:n5v},
+   {id:'n6',w:n6v,v:n6v+'%'},{id:'n7',w:Math.min(n7v*12,100),v:n7v+' GB'}
+  ].forEach(x=>{
+    document.getElementById(x.id).style.width=x.w+'%';
+    document.getElementById(x.id+'v').textContent=x.v;
+  });
+
+  const taskPerc=Math.floor(p/(100/TOTAL));
+  while(taskIdx<taskPerc && taskIdx<TOTAL){
+    const prev=taskIdx>0?document.getElementById('seg'+(taskIdx-1)):null;
+    if(prev) prev.classList.remove('cur');
+    document.getElementById('seg'+taskIdx).classList.add('on');
+    if(taskIdx<TOTAL-1) document.getElementById('seg'+(taskIdx+1)).classList.add('cur');
+    addLog(msgs[taskIdx][0],msgs[taskIdx][1],document.getElementById('logBody'),document.getElementById('logBadge'));
+    addLog(auditMsgs[taskIdx],'Audit',document.getElementById('auditBody'),document.getElementById('auditBadge'));
+    document.getElementById('m1').textContent=(taskIdx+1)+'/'+TOTAL;
+    if(taskIdx===7) addAlert("To'lov ma'lumotlari shifrlash tasdiqlandi");
+    if(taskIdx===14) addAlert("WebSocket ulanish barqarorlashdi — ping: 12ms");
+    taskIdx++;
+  }
+
+  if(p>=100){
+    clearInterval(timer);clearInterval(clockTimer);
+    document.getElementById('seg'+(TOTAL-1)).classList.add('on');
+    document.getElementById('sessState').textContent='Tugadi';
+    document.getElementById('doneBtn').style.display='block';
+    document.getElementById('pauseBtn').style.display='none';
+    document.getElementById('cancelBtn').style.display='none';
+  }
+}
+
+timer=setInterval(tick,100);
+
+document.getElementById('pauseBtn').addEventListener('click',()=>{
+  paused=!paused;
+  document.getElementById('pauseBtn').textContent=paused?'Davom etish':'Pauza';
+  document.getElementById('livePill').style.display=paused?'none':'flex';
+  document.getElementById('pausedPill').style.display=paused?'flex':'none';
+});
+
+document.getElementById('cancelBtn').addEventListener('click',()=>{
+  clearInterval(timer);clearInterval(clockTimer);
+  document.getElementById('sessState').textContent='Bekor qilindi';
+  document.getElementById('sessState').style.color='var(--color-text-danger)';
+  document.getElementById('m5').textContent='1';
+  document.getElementById('cancelBtn').disabled=true;
+  document.getElementById('cancelBtn').style.opacity='0.4';
+  document.getElementById('livePill').style.display='none';
+  addAlert('Jarayon foydalanuvchi tomonidan bekor qilindi!');
+});
+
+document.getElementById('doneBtn').addEventListener('click',()=>{
+  document.getElementById('fTime').textContent=elapsed+'s';
+  document.getElementById('mainShell').style.display='none';
+  document.getElementById('finalScreen').style.display='flex';
+});
+
+function restart(){location.reload();}
+</script>
 </body>
 </html>
