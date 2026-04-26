@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shaxslar Ma'lumotlar Bazasi</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --bg2: #1a1d27;
+    --bg3: #21253a;
+    --accent: #4f8ef7;
+    --accent2: #e05c8a;
+    --text: #e8eaf0;
+    --text2: #8b90a8;
+    --text3: #555c78;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --m-color: #4f8ef7;
+    --m-bg: rgba(79,142,247,0.1);
+    --f-color: #e05c8a;
+    --f-bg: rgba(224,92,138,0.1);
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── Layout ── */
+  .app { max-width: 960px; margin: 0 auto; padding: 2rem 1.25rem; }
+
+  /* ── Header ── */
+  .header {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 0.5px solid var(--border2);
+  }
+  .logo {
+    width: 44px; height: 44px; border-radius: var(--radius);
+    background: linear-gradient(135deg, #4f8ef7 0%, #e05c8a 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+  .header-text h1 { font-size: 19px; font-weight: 600; }
+  .header-text p { font-size: 13px; color: var(--text2); margin-top: 2px; }
+
+  /* ── Stats row ── */
+  .stats {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 10px; margin-bottom: 1.5rem;
+  }
+  .stat {
+    background: var(--bg2); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 14px 16px; text-align: center;
+  }
+  .stat-n { font-size: 24px; font-weight: 600; }
+  .stat-n.blue { color: var(--accent); }
+  .stat-n.pink { color: var(--accent2); }
+  .stat-l { font-size: 11px; color: var(--text2); margin-top: 4px; letter-spacing: 0.03em; }
+
+  /* ── Search row ── */
+  .search-row {
+    display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap;
+  }
+  .search-row input, .search-row select {
+    background: var(--bg2); border: 0.5px solid var(--border2);
+    border-radius: var(--radius); color: var(--text);
+    font-size: 14px; padding: 10px 14px; outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-row input:focus, .search-row select:focus {
+    border-color: var(--accent);
+  }
+  .search-row input { flex: 1; min-width: 180px; }
+  .search-row select { background-color: var(--bg2); cursor: pointer; }
+  .search-row select option { background: #1a1d27; }
+
+  /* ── Toolbar ── */
+  .toolbar {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px;
+  }
+  .res-label { font-size: 13px; color: var(--text2); }
+
+  .btn {
+    background: transparent; border: 0.5px solid var(--border2);
+    border-radius: var(--radius); color: var(--text);
+    font-size: 13px; padding: 8px 16px; cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .btn:hover { background: var(--bg3); border-color: var(--border2); }
+  .btn-primary {
+    background: var(--accent); border-color: var(--accent);
+    color: #fff; font-weight: 500;
+  }
+  .btn-primary:hover { background: #6aa0f8; }
+
+  /* ── Person card ── */
+  .person-card {
+    background: var(--bg2); border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg); padding: 1rem 1.25rem;
+    margin-bottom: 8px; display: flex; align-items: center;
+    gap: 14px; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .person-card:hover { border-color: var(--border2); background: var(--bg3); }
+
+  .avatar {
+    width: 46px; height: 46px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 15px; flex-shrink: 0;
+  }
+  .av-m { background: var(--m-bg); color: var(--m-color); }
+  .av-f { background: var(--f-bg); color: var(--f-color); }
+
+  .person-info { flex: 1; min-width: 0; }
+  .person-name { font-size: 15px; font-weight: 500; }
+  .person-meta {
+    font-size: 12px; color: var(--text2);
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;
+  }
+  .person-meta span { display: flex; align-items: center; gap: 3px; }
+
+  .badge {
+    font-size: 11px; padding: 2px 9px; border-radius: 99px;
+    font-weight: 500;
+  }
+  .badge-m { background: var(--m-bg); color: var(--m-color); }
+  .badge-f { background: var(--f-bg); color: var(--f-color); }
+  .badge-job {
+    background: rgba(255,255,255,0.05); color: var(--text2);
+  }
+
+  .card-id { font-size: 11px; color: var(--text3); flex-shrink: 0; }
+
+  /* ── Empty ── */
+  .empty {
+    text-align: center; padding: 3rem 1rem;
+    color: var(--text2); font-size: 14px;
+  }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.65); z-index: 200;
+    align-items: center; justify-content: center;
+    padding: 1rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg2); border: 0.5px solid var(--border2);
+    border-radius: var(--radius-lg); padding: 1.5rem;
+    width: 540px; max-width: 100%; max-height: 88vh;
+    overflow-y: auto;
+  }
+  .modal-head {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 1.25rem; padding-bottom: 1rem;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .modal-title { font-size: 16px; font-weight: 600; }
+  .modal-sub { font-size: 13px; color: var(--text2); margin-top: 3px; }
+  .modal-close {
+    margin-left: auto; background: none; border: none;
+    color: var(--text2); font-size: 20px; cursor: pointer; padding: 2px 6px;
+  }
+  .modal-close:hover { color: var(--text); }
+
+  .info-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .info-item {
+    background: var(--bg3); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 10px 14px;
+  }
+  .info-label {
+    font-size: 10px; color: var(--text3);
+    text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px;
+  }
+  .info-val { font-size: 14px; font-weight: 500; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 3px; }
+
+  @media (max-width: 600px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .info-grid { grid-template-columns: 1fr; }
+    .search-row input { min-width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="logo">🗄</div>
+    <div class="header-text">
+      <h1>Shaxslar Ma'lumotlar Bazasi</h1>
+      <p>1 000 ta shaxs yozuvi · Random qidiruv tizimi</p>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-n" id="s-total">1000</div>
+      <div class="stat-l">Jami yozuv</div>
+    </div>
+    <div class="stat">
+      <div class="stat-n blue" id="s-male">—</div>
+      <div class="stat-l">Erkaklar</div>
+    </div>
+    <div class="stat">
+      <div class="stat-n pink" id="s-female">—</div>
+      <div class="stat-l">Ayollar</div>
+    </div>
+    <div class="stat">
+      <div class="stat-n" id="s-found">0</div>
+      <div class="stat-l">Topildi</div>
+    </div>
+  </div>
+
+  <div class="search-row">
+    <input type="text" id="q" placeholder="🔍  Ism, familiya yoki ID..." oninput="search()">
+    <select id="gender-f" onchange="search()">
+      <option value="">Barcha jinslar</option>
+      <option value="Erkak">Erkak</option>
+      <option value="Ayol">Ayol</option>
+    </select>
+    <select id="city-f" onchange="search()">
+      <option value="">Barcha shaharlar</option>
+    </select>
+  </div>
+
+  <div class="toolbar">
+    <span class="res-label" id="res-label">Natijalar</span>
+    <button class="btn btn-primary" onclick="randomSearch()">🎲 Random 10 ta</button>
+  </div>
+
+  <div id="list"></div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="avatar" id="m-av"></div>
+      <div>
+        <div class="modal-title" id="m-name"></div>
+        <div class="modal-sub" id="m-sub"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="info-grid" id="m-grid"></div>
+  </div>
+</div>
+
+<script>
+/* ─── Data generation ─── */
+const FIRSTNAMES_M = ['Jasur','Bobur','Sherzod','Eldor','Ulugbek','Sardor','Javlon','Nodir','Alisher','Behruz','Dilshod','Farrux','Husan','Islom','Kamol','Mansur','Nurbek','Otabek','Ravshan','Sanjar','Tohir','Umid','Vohid','Xurshid','Zafar','Akbar','Bahodir','Doniyor','Elbek','Farhod'];
+const FIRSTNAMES_F = ['Malika','Nilufar','Zulfiya','Feruza','Dilorom','Mohira','Gulnora','Sarvinoz','Muazzam','Nargiza','Ozoda','Parizod','Rohila','Sitora','Umida','Vasila','Xilola','Yulduz','Ziyoda','Adolat','Barno','Dilnoza','Ezgulik','Fatima','Gavhar','Hulkar','Iroda','Kamola','Lola','Madina'];
+const LASTNAMES  = ['Toshmatov','Xasanov','Nazarov','Qodirov','Rahimov','Umarov','Mirzaev','Yusupov','Karimov','Aliyev','Botirov','Davlatov','Ergashev','Holiqov','Ismoilov','Jalilov','Xoliqov','Latipov','Mahmudov','Normatov','Ortiqov','Pulatov','Qosimov','Razzaqov','Sultanov','Tursunov','Ubaydullayev','Valiyev','Xojayev','Zokirov'];
+const CITIES = ['Toshkent','Samarqand','Buxoro','Namangan','Andijon','Farg\'ona','Nukus','Qarshi','Termiz','Urgench','Jizzax','Guliston','Navoiy','Denov','Kogon'];
+const JOBS   = ['Dasturchi','Shifokor','O\'qituvchi','Muhandis','Iqtisodchi','Huquqshunos','Arxitektor','Buxgalter','Menedjer','Jurnalist','Agranomist','Diplomatchi','Pilot','Stomatolog','Psixolog','Farmatsevt','Elektrik','Haydovchi','Tadbirkor','Dizayner'];
+const BLOOD  = ['A+','A-','B+','B-','AB+','AB-','O+','O-'];
+const EDU    = ['Oliy','O\'rta maxsus','Umumiy o\'rta','Magistr','PhD'];
+const STATUS = ['Turmush qurgan','Turmush qurmagan','Ajrashgan','Beva'];
+
+function rng(seed) {
+  let s = seed;
+  return () => { s = (s * 1664525 + 1013904223) & 0xffffffff; return (s >>> 0) / 4294967296; };
+}
+
+const DB = Array.from({ length: 1000 }, (_, i) => {
+  const r   = rng(i * 7919 + 31337);
+  const gender  = r() > 0.5 ? 'Erkak' : 'Ayol';
+  const fnames  = gender === 'Erkak' ? FIRSTNAMES_M : FIRSTNAMES_F;
+  const fname   = fnames[Math.floor(r() * fnames.length)];
+  const lname   = LASTNAMES[Math.floor(r() * LASTNAMES.length)];
+  const sfx     = gender === 'Erkak' ? 'ovich' : 'ovna';
+  const patronym= FIRSTNAMES_M[Math.floor(r() * 30)] + sfx;
+  const year    = 1950 + Math.floor(r() * 55);
+  const month   = 1  + Math.floor(r() * 12);
+  const day     = 1  + Math.floor(r() * 28);
+  const pad     = n => String(n).padStart(2, '0');
+  const dob     = `${pad(day)}.${pad(month)}.${year}`;
+  const city    = CITIES[Math.floor(r() * CITIES.length)];
+  const job     = JOBS[Math.floor(r() * JOBS.length)];
+  const blood   = BLOOD[Math.floor(r() * BLOOD.length)];
+  const edu     = EDU[Math.floor(r() * EDU.length)];
+  const status  = STATUS[Math.floor(r() * STATUS.length)];
+  const children= Math.floor(r() * 5);
+  const phone   = `+998 ${90 + Math.floor(r() * 9)} ${String(100 + Math.floor(r() * 900))} ${String(1000 + Math.floor(r() * 9000))}`;
+  const salary  = (2 + Math.floor(r() * 18)) * 500000;
+  const height  = 155 + Math.floor(r() * 40);
+  const weight  = 50  + Math.floor(r() * 60);
+  const inn     = String(Math.floor(r() * 9e13 + 1e13)).slice(0, 14);
+  return { id: i+1, fname, lname, patronym, gender, dob, city, job, blood, edu, status, children, phone, salary, height, weight, inn };
+});
+
+/* ─── Init stats ─── */
+const maleCount = DB.filter(p => p.gender === 'Erkak').length;
+document.getElementById('s-male').textContent   = maleCount;
+document.getElementById('s-female').textContent = 1000 - maleCount;
+
+/* ─── City dropdown ─── */
+const citySelect = document.getElementById('city-f');
+[...CITIES].sort().forEach(c => {
+  const o = document.createElement('option');
+  o.value = c; o.textContent = c;
+  citySelect.appendChild(o);
+});
+
+/* ─── Render ─── */
+function initials(p) { return p.fname[0] + p.lname[0]; }
+function avCls(p)    { return p.gender === 'Erkak' ? 'av-m' : 'av-f'; }
+function badgeCls(p) { return p.gender === 'Erkak' ? 'badge-m' : 'badge-f'; }
+function fmt(n)      { return n.toLocaleString('uz-UZ'); }
+
+function renderList(arr) {
+  document.getElementById('s-found').textContent  = arr.length;
+  document.getElementById('res-label').textContent = `${arr.length} ta natija`;
+  const list = document.getElementById('list');
+  if (!arr.length) {
+    list.innerHTML = '<div class="empty">Hech narsa topilmadi. Boshqa so\'z kiriting.</div>';
+    return;
+  }
+  const slice = arr.slice(0, 50);
+  list.innerHTML = slice.map(p => `
+    <div class="person-card" onclick="openModal(${p.id})">
+      <div class="avatar ${avCls(p)}">${initials(p)}</div>
+      <div class="person-info">
+        <div class="person-name">${p.lname} ${p.fname} ${p.patronym}</div>
+        <div class="person-meta">
+          <span>📅 ${p.dob}</span>
+          <span>📍 ${p.city}</span>
+          <span class="badge ${badgeCls(p)}">${p.gender}</span>
+          <span class="badge badge-job">${p.job}</span>
+        </div>
+      </div>
+      <div class="card-id">#${p.id}</div>
+    </div>`).join('');
+  if (arr.length > 50) {
+    list.innerHTML += `<div class="empty">… va yana ${arr.length - 50} ta. Qidiruvni torayting.</div>`;
+  }
+}
+
+/* ─── Search ─── */
+function search() {
+  const q  = document.getElementById('q').value.trim().toLowerCase();
+  const gf = document.getElementById('gender-f').value;
+  const cf = document.getElementById('city-f').value;
+  let res = DB;
+  if (q)  res = res.filter(p => (p.fname + ' ' + p.lname + ' ' + p.patronym + ' ' + p.id).toLowerCase().includes(q));
+  if (gf) res = res.filter(p => p.gender === gf);
+  if (cf) res = res.filter(p => p.city === cf);
+  renderList(res);
+}
+
+function randomSearch() {
+  document.getElementById('q').value        = '';
+  document.getElementById('gender-f').value = '';
+  document.getElementById('city-f').value   = '';
+  const shuffled = [...DB].sort(() => Math.random() - 0.5).slice(0, 10);
+  renderList(shuffled);
+}
+
+/* ─── Modal ─── */
+function openModal(id) {
+  const p = DB.find(x => x.id === id);
+  if (!p) return;
+  const av = document.getElementById('m-av');
+  av.textContent = initials(p);
+  av.className   = 'avatar ' + avCls(p);
+  document.getElementById('m-name').textContent = `${p.lname} ${p.fname} ${p.patronym}`;
+  document.getElementById('m-sub').textContent  = `${p.job} · ${p.city}`;
+
+  const fields = [
+    ['Jinsi',           p.gender],
+    ['Tug\'ilgan sana', p.dob],
+    ['Yashash joyi',    p.city],
+    ['Kasbi',           p.job],
+    ['Ta\'lim',         p.edu],
+    ['Oilaviy holat',   p.status],
+    ['Farzandlar',      p.children + ' ta'],
+    ['Qon guruhi',      p.blood],
+    ['Telefon',         p.phone],
+    ['Oylik maoshi',    fmt(p.salary) + ' so\'m'],
+    ['Bo\'yi',          p.height + ' sm'],
+    ['Vazni',           p.weight + ' kg'],
+    ['INN (STIR)',      p.inn],
+    ['Shaxsiy ID',      '#' + p.id],
+  ];
+
+  document.getElementById('m-grid').innerHTML = fields.map(([l, v]) => `
+    <div class="info-item">
+      <div class="info-label">${l}</div>
+      <div class="info-val">${v}</div>
+    </div>`).join('');
+
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+/* ─── Boot ─── */
+randomSearch();
+</script>
+</body>
+</html>
