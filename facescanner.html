@@ -333,22 +333,7 @@
 
 <script>
 /* ============ MA'LUMOTLAR ============ */
-const NAMES = [
-  "Alisher Nazarov",    "Bobur Xolmatov",     "Dilnoza Yusupova",
-  "Farrux Toshmatov",   "Gulnora Rahimova",   "Hamid Mirzayev",
-  "Iroda Karimova",     "Jasur Qodirov",      "Kamola Ergasheva",
-  "Laziz Abdullayev",   "Malika Sobirov",     "Nodir Xasanov",
-  "Oydin Mamatova",     "Pulat Ismoilov",     "Qunduz Baxtiyorova",
-  "Rustam Normatov",    "Sarvinoz Haydarova", "Tohir Umarov",
-  "Umida Rajabova",     "Vohid Yunusov",      "Xurshid Sotvoldiyev",
-  "Yulduz Qosimova",   "Zafar Muxtarov",     "Aziza Xoliqova",
-  "Behruz Raximov",    "Charos Tillayeva",   "Davron Sultonov",
-  "Ezgulik Norova",    "Firdavs Usmonov",    "Gavhar Abdurazzaqova",
-  "Husan Tursunov",    "Intizor Mansurova",  "Jahongir Qurbonov",
-  "Kamola Nazarova",   "Laylo Matniyozova",  "Muzaffar Holiqov",
-  "Nilufar Eshmatova", "Otabek Tojiboyev",   "Parizod Xoliqova",
-  "Qodir Xoliqov",
-];
+let NAMES = [];
 
 function randScore() { return Math.floor(Math.random() * 38) + 60; } // 60–97
 
@@ -363,11 +348,7 @@ function shuffle(arr) {
 }
 
 /* Build rows */
-let rows = shuffle(NAMES).map((name, i) => ({
-  name,
-  score: randScore(),
-  status: 'KUTILMOQDA',
-}));
+let rows = [];
 
 const idListEl  = document.getElementById('idList');
 const idDotEl   = document.getElementById('idDot');
@@ -377,6 +358,16 @@ function scoreClass(s) {
   if (s >= 85) return 'high';
   if (s >= 72) return 'mid';
   return 'low';
+}
+
+function buildRows(names) {
+  return shuffle(names).map(name => ({
+    name,
+    score: randScore(),
+    status: 'KUTILMOQDA',
+    statusCls: '',
+    highlight: false,
+  }));
 }
 
 function renderList() {
@@ -394,7 +385,33 @@ function renderList() {
   });
 }
 
-renderList();
+/* ism.txt dan o'qish */
+async function loadNames() {
+  try {
+    const resp = await fetch('./ism.txt');
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const text = await resp.text();
+    const words = text.trim().split(/\s+/).filter(w => w.length > 0);
+    const parsed = [];
+    for (let i = 0; i + 1 < words.length; i += 2) {
+      parsed.push(words[i] + ' ' + words[i + 1]);
+    }
+    if (parsed.length === 0) throw new Error("Fayl bosh yoki notogri format");
+    NAMES = parsed;
+    addLog(`ism.txt dan ${NAMES.length} ta shaxs yuklandi`, 'ok');
+  } catch(e) {
+    addLog(`ism.txt oqilmadi: ${e.message}`, 'err');
+    addLog("Fayl HTML bilan bir papkada bolishi kerak", 'warn');
+    NAMES = ["Nodir Toirov","Ali Kadirov","Rustam Hamidov","Otabek Abdullayev",
+             "Kamron Toirov","Anvar Kadirov","Said Khalilov","Sardor Mirzaev",
+             "Sanjar Yusupov","Jasur Rasulov","Ulugbek Toirov","Shavkat Akbarov"];
+  }
+  rows = buildRows(NAMES);
+  idCountEl.textContent = `0 / ${rows.length} TEKSHIRILDI`;
+  renderList();
+}
+
+loadNames();
 
 /* ============ SCROLL ANIMATSIYA ============ */
 let scrollActive = false;
@@ -446,13 +463,7 @@ function tickScroll() {
     // restart from top with reshuffled scores
     currentIdx = 0;
     checkedCount = 0;
-    rows = shuffle(NAMES).map((name, i) => ({
-      name,
-      score: randScore(),
-      status: 'KUTILMOQDA',
-      statusCls: '',
-      highlight: false,
-    }));
+    rows = buildRows(NAMES);
   }
 }
 
