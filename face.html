@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yuz Skaneri</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+
+  :root {
+    --green: #00ff88;
+    --green-dim: #00ff8840;
+    --bg: #020d0a;
+    --panel: #040f0b;
+    --red: #ff3333;
+    --amber: #ffaa00;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--green);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+    padding-bottom: 30px;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    width: 100%;
+    max-width: 560px;
+  }
+
+  h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.1rem, 4vw, 1.7rem);
+    font-weight: 900;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    text-shadow: 0 0 20px var(--green), 0 0 40px var(--green-dim);
+    animation: flicker 5s infinite;
+  }
+
+  .subtitle {
+    font-size: 0.68rem;
+    letter-spacing: 3px;
+    color: #00ff8870;
+    margin-top: 3px;
+    text-align: center;
+  }
+
+  @keyframes flicker {
+    0%,94%,100%{opacity:1} 95%{opacity:.6} 97%{opacity:.9} 99%{opacity:.5}
+  }
+
+  .cam-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    aspect-ratio: 4/3;
+    background: #000;
+    border: 1px solid var(--green-dim);
+    overflow: hidden;
+  }
+
+  .corner { position: absolute; width: 22px; height: 22px; z-index: 10; pointer-events: none; }
+  .corner-tl { top:0;left:0; border-top:2px solid var(--green); border-left:2px solid var(--green); }
+  .corner-tr { top:0;right:0; border-top:2px solid var(--green); border-right:2px solid var(--green); }
+  .corner-bl { bottom:0;left:0; border-bottom:2px solid var(--green); border-left:2px solid var(--green); }
+  .corner-br { bottom:0;right:0; border-bottom:2px solid var(--green); border-right:2px solid var(--green); }
+
+  .crt {
+    position: absolute; inset: 0; z-index: 8; pointer-events: none;
+    background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);
+  }
+
+  .scanline {
+    position: absolute; left:0; right:0; height:2px;
+    background: linear-gradient(90deg, transparent, var(--green), transparent);
+    box-shadow: 0 0 8px var(--green);
+    top: -2px; z-index: 5; opacity: 0; pointer-events: none;
+  }
+  .scanline.active { opacity: 1; animation: scan 2.2s linear infinite; }
+  @keyframes scan { 0%{top:0%} 100%{top:100%} }
+
+  video {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+    transform: scaleX(-1);
+  }
+
+  canvas#overlay {
+    position: absolute; top:0; left:0;
+    width: 100%; height: 100%;
+    pointer-events: none; z-index: 6;
+  }
+
+  .placeholder {
+    position: absolute; inset:0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 10px; font-size: 0.75rem;
+    letter-spacing: 2px; color: #00ff8860;
+  }
+
+  .status-panel {
+    width: 100%; max-width: 480px;
+    background: var(--panel);
+    border: 1px solid var(--green-dim);
+    padding: 12px 16px;
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 6px 20px;
+  }
+
+  .stat-row {
+    display: flex; justify-content: space-between;
+    font-size: 0.7rem; letter-spacing: 1px;
+    border-bottom: 1px solid #00ff8812; padding-bottom: 4px;
+  }
+
+  .stat-label { color: #00ff8870; text-transform: uppercase; }
+  .stat-value { color: var(--green); font-weight: bold; }
+  .stat-value.warn { color: var(--amber); }
+  .stat-value.danger { color: var(--red); animation: blink .6s infinite; }
+  .stat-value.ok { color: var(--green); }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  .controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+  button {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.68rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+    padding: 10px 22px;
+    background: transparent;
+    border: 1px solid var(--green);
+    color: var(--green);
+    cursor: pointer; transition: all 0.2s;
+    position: relative; overflow: hidden;
+  }
+  button::before {
+    content:''; position:absolute; inset:0;
+    background: var(--green);
+    transform: translateX(-100%);
+    transition: transform 0.2s; z-index: -1;
+  }
+  button:hover::before { transform: translateX(0); }
+  button:hover { color: #000; box-shadow: 0 0 18px var(--green-dim); }
+  button:disabled { opacity: 0.3; cursor: not-allowed; }
+  button:disabled:hover { color: var(--green); }
+  button:disabled::before { display: none; }
+  button.red { border-color: var(--red); color: var(--red); }
+  button.red::before { background: var(--red); }
+  button.red:hover { color: #000; }
+
+  .log {
+    width: 100%; max-width: 480px;
+    background: var(--panel);
+    border: 1px solid var(--green-dim);
+    padding: 8px 12px; height: 75px;
+    overflow-y: auto; font-size: 0.67rem; letter-spacing: 1px;
+  }
+  .le { margin-bottom: 2px; }
+  .le.ok { color: var(--green); }
+  .le.warn { color: var(--amber); }
+  .le.err { color: var(--red); }
+  .le .ts { color: #00ff8840; margin-right: 6px; }
+
+  /* ========== IDENTIFIKATSIYA RO'YXATI ========== */
+  .id-panel {
+    width: 100%; max-width: 480px;
+    background: var(--panel);
+    border: 1px solid var(--green-dim);
+    overflow: hidden;
+  }
+
+  .id-panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--green-dim);
+    font-family: 'Orbitron', monospace;
+    font-size: 0.62rem; letter-spacing: 3px;
+    color: #00ff8890;
+  }
+
+  .id-panel-header .blink-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--red); display: inline-block;
+    margin-right: 7px;
+  }
+  .id-panel-header .blink-dot.active {
+    background: var(--green);
+    animation: blink .9s infinite;
+    box-shadow: 0 0 6px var(--green);
+  }
+
+  .id-list-wrap {
+    height: 200px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* fade edges */
+  .id-list-wrap::before, .id-list-wrap::after {
+    content: '';
+    position: absolute; left:0; right:0; height: 36px; z-index: 2;
+    pointer-events: none;
+  }
+  .id-list-wrap::before { top:0; background: linear-gradient(to bottom, var(--panel), transparent); }
+  .id-list-wrap::after  { bottom:0; background: linear-gradient(to top, var(--panel), transparent); }
+
+  .id-list {
+    display: flex; flex-direction: column;
+    gap: 0;
+    transition: none;
+  }
+
+  .id-row {
+    display: grid;
+    grid-template-columns: 36px 1fr 90px 70px;
+    align-items: center;
+    padding: 6px 14px;
+    border-bottom: 1px solid #00ff8810;
+    font-size: 0.68rem; letter-spacing: 1px;
+    transition: background 0.15s;
+  }
+
+  .id-row.highlight {
+    background: #00ff8818;
+    border-left: 3px solid var(--green);
+  }
+  .id-row.highlight .id-name { color: #fff; text-shadow: 0 0 8px var(--green); }
+
+  .id-num { color: #00ff8840; font-size: 0.6rem; }
+  .id-name { color: var(--green); font-weight: bold; letter-spacing: 2px; }
+  .id-score {
+    font-size: 0.62rem; letter-spacing: 1px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+  .id-score.high { color: var(--green); }
+  .id-score.mid  { color: var(--amber); }
+  .id-score.low  { color: var(--red); }
+
+  .id-status {
+    font-size: 0.58rem; letter-spacing: 1px; text-align: right;
+    color: #00ff8870;
+  }
+  .id-status.match { color: var(--green); font-weight: bold; }
+  .id-status.scan  { color: var(--amber); }
+</style>
+</head>
+<body>
+<div class="container">
+  <div style="text-align:center">
+    <h1>&#9632; YUZ SKANERI</h1>
+    <div class="subtitle">BIOMETRIK IDENTIFIKATSIYA TIZIMI &middot; MediaPipe</div>
+  </div>
+
+  <div class="cam-wrapper">
+    <div class="corner corner-tl"></div>
+    <div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div>
+    <div class="corner corner-br"></div>
+    <div class="crt"></div>
+    <div class="scanline" id="scanline"></div>
+    <video id="video" autoplay muted playsinline></video>
+    <canvas id="overlay"></canvas>
+    <div class="placeholder" id="placeholder">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".4">
+        <circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/>
+        <rect x="2" y="2" width="20" height="20" rx="2" stroke-dasharray="4 2"/>
+      </svg>
+      KAMERA O'CHIRILGAN
+    </div>
+  </div>
+
+  <div class="status-panel">
+    <div class="stat-row"><span class="stat-label">Holat</span><span class="stat-value" id="stStatus">TAYYOR</span></div>
+    <div class="stat-row"><span class="stat-label">Yuzlar</span><span class="stat-value" id="stFaces">0</span></div>
+    <div class="stat-row"><span class="stat-label">Kamera</span><span class="stat-value" id="stCam">OFF</span></div>
+    <div class="stat-row"><span class="stat-label">FPS</span><span class="stat-value" id="stFps">--</span></div>
+    <div class="stat-row"><span class="stat-label">Skan</span><span class="stat-value" id="stScan">FAOL EMAS</span></div>
+    <div class="stat-row"><span class="stat-label">Signal</span><span class="stat-value" id="stSignal">--</span></div>
+  </div>
+
+  <div class="controls">
+    <button id="btnStart">&#9654; KAMERANI YOQISH</button>
+    <button id="btnScan" disabled>&#9632; SKANLASH</button>
+    <button id="btnStop" class="red" disabled>&#9632; TO'XTATISH</button>
+  </div>
+
+  <div class="log" id="log"></div>
+
+  <!-- ===== IDENTIFIKATSIYA RO'YXATI ===== -->
+  <div class="id-panel">
+    <div class="id-panel-header">
+      <div><span class="blink-dot" id="idDot"></span>IDENTIFIKATSIYA MA'LUMOTLAR BAZASI</div>
+      <div id="idCounter">0 / 0 TEKSHIRILDI</div>
+    </div>
+    <div class="id-list-wrap">
+      <div class="id-list" id="idList"></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection@0.4.1646425229/face_detection.js" crossorigin="anonymous"></script>
+
+<script>
+/* ============ MA'LUMOTLAR ============ */
+const NAMES = [
+  "Alisher Nazarov",    "Bobur Xolmatov",     "Dilnoza Yusupova",
+  "Farrux Toshmatov",   "Gulnora Rahimova",   "Hamid Mirzayev",
+  "Iroda Karimova",     "Jasur Qodirov",      "Kamola Ergasheva",
+  "Laziz Abdullayev",   "Malika Sobirov",     "Nodir Xasanov",
+  "Oydin Mamatova",     "Pulat Ismoilov",     "Qunduz Baxtiyorova",
+  "Rustam Normatov",    "Sarvinoz Haydarova", "Tohir Umarov",
+  "Umida Rajabova",     "Vohid Yunusov",      "Xurshid Sotvoldiyev",
+  "Yulduz Qosimova",   "Zafar Muxtarov",     "Aziza Xoliqova",
+  "Behruz Raximov",    "Charos Tillayeva",   "Davron Sultonov",
+  "Ezgulik Norova",    "Firdavs Usmonov",    "Gavhar Abdurazzaqova",
+  "Husan Tursunov",    "Intizor Mansurova",  "Jahongir Qurbonov",
+  "Kamola Nazarova",   "Laylo Matniyozova",  "Muzaffar Holiqov",
+  "Nilufar Eshmatova", "Otabek Tojiboyev",   "Parizod Xoliqova",
+  "Qodir Xoliqov",
+];
+
+function randScore() { return Math.floor(Math.random() * 38) + 60; } // 60–97
+
+/* shuffle */
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* Build rows */
+let rows = shuffle(NAMES).map((name, i) => ({
+  name,
+  score: randScore(),
+  status: 'KUTILMOQDA',
+}));
+
+const idListEl  = document.getElementById('idList');
+const idDotEl   = document.getElementById('idDot');
+const idCountEl = document.getElementById('idCounter');
+
+function scoreClass(s) {
+  if (s >= 85) return 'high';
+  if (s >= 72) return 'mid';
+  return 'low';
+}
+
+function renderList() {
+  idListEl.innerHTML = '';
+  rows.forEach((r, i) => {
+    const div = document.createElement('div');
+    div.className = 'id-row' + (r.highlight ? ' highlight' : '');
+    div.innerHTML = `
+      <span class="id-num">${String(i+1).padStart(2,'0')}</span>
+      <span class="id-name">${r.name}</span>
+      <span class="id-score ${scoreClass(r.score)}">${r.score}% MOSLIK</span>
+      <span class="id-status ${r.statusCls}">${r.status}</span>
+    `;
+    idListEl.appendChild(div);
+  });
+}
+
+renderList();
+
+/* ============ SCROLL ANIMATSIYA ============ */
+let scrollActive = false;
+let currentIdx   = 0;
+let checkedCount = 0;
+let scrollInterval = null;
+let ROW_H = 0;
+
+function getRowH() {
+  const first = idListEl.querySelector('.id-row');
+  return first ? first.offsetHeight : 37;
+}
+
+function scrollToRow(idx) {
+  ROW_H = getRowH();
+  const wrap   = document.querySelector('.id-list-wrap');
+  const wrapH  = wrap.offsetHeight;
+  const offset = idx * ROW_H - wrapH / 2 + ROW_H / 2;
+  idListEl.style.transform = `translateY(${-Math.max(0, offset)}px)`;
+}
+
+function tickScroll() {
+  // clear old highlight
+  rows.forEach(r => { r.highlight = false; r.statusCls = r.statusCls === 'scan' ? '' : r.statusCls; });
+
+  // update current row
+  rows[currentIdx].highlight = true;
+  rows[currentIdx].status    = 'SKANLANMOQDA';
+  rows[currentIdx].statusCls = 'scan';
+
+  // mark previous as checked (random result)
+  if (currentIdx > 0) {
+    const prev = rows[currentIdx - 1];
+    if (prev.status === 'SKANLANMOQDA') {
+      const matched = prev.score >= 80;
+      prev.status    = matched ? 'TASDIQLANDI' : 'RAD ETILDI';
+      prev.statusCls = matched ? 'match' : '';
+      checkedCount++;
+    }
+  }
+
+  idCountEl.textContent = `${checkedCount} / ${rows.length} TEKSHIRILDI`;
+
+  renderList();
+  scrollToRow(currentIdx);
+
+  currentIdx++;
+  if (currentIdx >= rows.length) {
+    // restart from top with reshuffled scores
+    currentIdx = 0;
+    checkedCount = 0;
+    rows = shuffle(NAMES).map((name, i) => ({
+      name,
+      score: randScore(),
+      status: 'KUTILMOQDA',
+      statusCls: '',
+      highlight: false,
+    }));
+  }
+}
+
+function startScroll() {
+  if (scrollActive) return;
+  scrollActive = true;
+  idDotEl.classList.add('active');
+  // vary speed: 200–350ms per row
+  scrollInterval = setInterval(tickScroll, 260);
+}
+
+function stopScroll() {
+  scrollActive = false;
+  clearInterval(scrollInterval);
+  idDotEl.classList.remove('active');
+  // freeze all in current state
+  rows.forEach(r => {
+    if (r.status === 'SKANLANMOQDA') { r.status = 'TO\'XTATILDI'; r.statusCls = ''; r.highlight = false; }
+  });
+  idCountEl.textContent = `${checkedCount} / ${rows.length} TEKSHIRILDI`;
+  renderList();
+}
+
+/* ============ KAMERA / DETEKTOR ============ */
+const video    = document.getElementById('video');
+const overlay  = document.getElementById('overlay');
+const ctx      = overlay.getContext('2d');
+const scanline = document.getElementById('scanline');
+const placeholder = document.getElementById('placeholder');
+const logEl    = document.getElementById('log');
+
+const stStatus = document.getElementById('stStatus');
+const stFaces  = document.getElementById('stFaces');
+const stCam    = document.getElementById('stCam');
+const stFps    = document.getElementById('stFps');
+const stScan   = document.getElementById('stScan');
+const stSignal = document.getElementById('stSignal');
+
+const btnStart = document.getElementById('btnStart');
+const btnScan  = document.getElementById('btnScan');
+const btnStop  = document.getElementById('btnStop');
+
+let stream = null;
+let scanning = false;
+let detector = null;
+let lastFaceCount = -1;
+let fpsArr = [];
+let lastT = 0;
+let rafId = null;
+
+function pad(n){ return String(n).padStart(2,'0'); }
+
+function addLog(msg, type='ok') {
+  const now = new Date();
+  const ts = `[${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}]`;
+  const d = document.createElement('div');
+  d.className = 'le ' + type;
+  d.innerHTML = `<span class="ts">${ts}</span>${msg}`;
+  logEl.appendChild(d);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function setStatus(txt, cls='') {
+  stStatus.textContent = txt;
+  stStatus.className = 'stat-value ' + cls;
+}
+
+function calcFps() {
+  const now = performance.now();
+  if (lastT) {
+    fpsArr.push(1000 / (now - lastT));
+    if (fpsArr.length > 12) fpsArr.shift();
+    stFps.textContent = Math.round(fpsArr.reduce((a,b)=>a+b,0)/fpsArr.length);
+  }
+  lastT = now;
+}
+
+function drawFaces(detections) {
+  overlay.width  = video.videoWidth  || 640;
+  overlay.height = video.videoHeight || 480;
+  ctx.clearRect(0, 0, overlay.width, overlay.height);
+  const W = overlay.width, H = overlay.height;
+
+  detections.forEach((d, i) => {
+    const bb = d.boundingBox;
+    const x = (1 - bb.xCenter - bb.width/2) * W;
+    const y = (bb.yCenter - bb.height/2) * H;
+    const w = bb.width * W;
+    const h = bb.height * H;
+
+    ctx.save();
+    ctx.shadowColor = '#00ff88';
+    ctx.shadowBlur = 14;
+    ctx.strokeStyle = '#00ff88';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(x, y, w, h);
+
+    const cs = 14;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x, y+cs); ctx.lineTo(x, y); ctx.lineTo(x+cs, y);
+    ctx.moveTo(x+w-cs, y); ctx.lineTo(x+w, y); ctx.lineTo(x+w, y+cs);
+    ctx.moveTo(x, y+h-cs); ctx.lineTo(x, y+h); ctx.lineTo(x+cs, y+h);
+    ctx.moveTo(x+w-cs, y+h); ctx.lineTo(x+w, y+h); ctx.lineTo(x+w, y+h-cs);
+    ctx.stroke();
+
+    const score = Math.round((d.score || 0.9) * 100);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#00ff88';
+    ctx.font = 'bold 10px Orbitron, monospace';
+    ctx.fillText(`YUZ #${i+1} [${score}%]`, x, y > 16 ? y - 6 : y + h + 14);
+
+    if (d.keypoints) {
+      ctx.fillStyle = 'rgba(0,255,136,0.75)';
+      d.keypoints.forEach(kp => {
+        ctx.beginPath();
+        ctx.arc((1 - kp.x) * W, kp.y * H, 2.5, 0, Math.PI*2);
+        ctx.fill();
+      });
+    }
+    ctx.restore();
+  });
+}
+
+function onResults(results) {
+  if (!scanning) return;
+  calcFps();
+  const faces = results.detections || [];
+  const count = faces.length;
+  drawFaces(faces);
+  stFaces.textContent = count;
+
+  if (count !== lastFaceCount) {
+    if (count > 0) {
+      addLog(`${count} ta yuz aniqlandi!`, 'ok');
+      setStatus('YUZ TOPILDI', 'ok');
+    } else {
+      if (lastFaceCount > 0) addLog("Yuz yo'qoldi", 'warn');
+      setStatus('QIDIRMOQDA...', 'warn');
+    }
+    lastFaceCount = count;
+  }
+}
+
+async function startCamera() {
+  btnStart.disabled = true;
+  setStatus('YUKLANMOQDA', 'warn');
+  addLog('Tizim ishga tushmoqda...', 'warn');
+
+  try {
+    detector = new FaceDetection({
+      locateFile: (file) =>
+        `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection@0.4.1646425229/${file}`
+    });
+    detector.setOptions({ model: 'short', minDetectionConfidence: 0.5 });
+    detector.onResults(onResults);
+    addLog('Detektor tayyor', 'ok');
+
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
+    });
+    video.srcObject = stream;
+    await new Promise(r => { video.onloadedmetadata = r; });
+
+    placeholder.style.display = 'none';
+    stCam.textContent = 'ON';
+    stCam.className = 'stat-value ok';
+    stSignal.textContent = 'KUCHLI';
+    stSignal.className = 'stat-value ok';
+    setStatus('KAMERA YOQIQ', 'ok');
+    addLog('Kamera yoqildi', 'ok');
+
+    btnScan.disabled = false;
+    btnStop.disabled = false;
+
+  } catch(e) {
+    addLog('Xato: ' + e.message, 'err');
+    setStatus('XATO', 'danger');
+    stSignal.textContent = "YO'Q";
+    stSignal.className = 'stat-value danger';
+    btnStart.disabled = false;
+  }
+}
+
+async function scanLoop() {
+  if (!scanning || !stream || !detector) return;
+  try { await detector.send({ image: video }); } catch(e) {}
+  rafId = requestAnimationFrame(scanLoop);
+}
+
+function startScan() {
+  scanning = true;
+  scanline.classList.add('active');
+  stScan.textContent = 'FAOL';
+  stScan.className = 'stat-value ok';
+  btnScan.disabled = true;
+  lastFaceCount = -1;
+  addLog('Skanlash boshlandi...', 'ok');
+  setStatus('SKANLANMOQDA', 'ok');
+  scanLoop();
+  startScroll(); // 👈 ro'yxat aylanishini boshlash
+}
+
+function stopAll() {
+  scanning = false;
+  if (rafId) cancelAnimationFrame(rafId);
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  video.srcObject = null;
+  ctx.clearRect(0, 0, overlay.width, overlay.height);
+  scanline.classList.remove('active');
+  placeholder.style.display = 'flex';
+
+  stCam.textContent = 'OFF';      stCam.className = 'stat-value';
+  stFps.textContent = '--';
+  stFaces.textContent = '0';
+  stScan.textContent = 'FAOL EMAS'; stScan.className = 'stat-value';
+  stSignal.textContent = '--';    stSignal.className = 'stat-value';
+  setStatus("TO'XTATILDI", '');
+
+  btnStart.disabled = false;
+  btnScan.disabled  = true;
+  btnStop.disabled  = true;
+  fpsArr = []; lastT = 0; lastFaceCount = -1;
+  addLog("Tizim to'xtatildi", 'warn');
+  stopScroll(); // 👈 ro'yxatni to'xtatish
+}
+
+btnStart.addEventListener('click', startCamera);
+btnScan.addEventListener('click', startScan);
+btnStop.addEventListener('click', stopAll);
+
+addLog('Tizim ishga tayyor', 'ok');
+addLog('"KAMERANI YOQISH" tugmasini bosing', 'warn');
+</script>
+</body>
+</html>
