@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Device Info Demo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #080b12;
+      --panel: #0f1420;
+      --card: #131929;
+      --border: #1e2d45;
+      --accent: #38bdf8;
+      --accent2: #fb7185;
+      --accent3: #a78bfa;
+      --accent4: #34d399;
+      --accent5: #fbbf24;
+      --text: #e2e8f0;
+      --muted: #475569;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      min-height: 100vh;
+      padding: 24px 16px 40px;
+    }
+
+    body::before {
+      content:'';
+      position:fixed; inset:0; pointer-events:none;
+      background:
+        radial-gradient(ellipse 600px 400px at 80% 0%, rgba(56,189,248,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 400px 300px at 10% 90%, rgba(167,139,250,0.06) 0%, transparent 60%);
+    }
+
+    .wrap { max-width: 720px; margin: 0 auto; position:relative; z-index:1; }
+
+    /* Header */
+    .header { text-align:center; margin-bottom:36px; padding-top:12px; }
+    .header .chip {
+      display:inline-block;
+      font-family:'Space Mono',monospace;
+      font-size:10px; letter-spacing:3px;
+      color: var(--accent4);
+      border:1px solid rgba(52,211,153,0.3);
+      padding:4px 14px; margin-bottom:16px;
+    }
+    .header h1 {
+      font-size:36px; font-weight:800; line-height:1;
+      background:linear-gradient(135deg, var(--text) 30%, var(--accent) 100%);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+      margin-bottom:8px;
+    }
+    .header p { color:var(--muted); font-family:'Space Mono',monospace; font-size:11px; letter-spacing:1px; }
+
+    /* Scan button */
+    .scan-btn {
+      display:block; width:100%; max-width:360px; margin:0 auto 36px;
+      background:linear-gradient(135deg, var(--accent) 0%, var(--accent3) 100%);
+      color:#000; border:none; padding:16px 24px;
+      font-family:'Syne',sans-serif; font-size:15px; font-weight:800;
+      cursor:pointer; letter-spacing:2px; text-transform:uppercase;
+      transition: opacity 0.2s, transform 0.15s;
+      position:relative; overflow:hidden;
+    }
+    .scan-btn:hover { opacity:0.9; transform:translateY(-2px); }
+    .scan-btn:active { transform:scale(0.98); }
+    .scan-btn.scanning { opacity:0.7; cursor:wait; }
+
+    /* Sections grid */
+    .sections { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    @media(max-width:560px){ .sections{ grid-template-columns:1fr; } }
+
+    .section {
+      background:var(--card);
+      border:1px solid var(--border);
+      padding:18px;
+      display:none;
+      animation: slideIn 0.4s ease;
+    }
+    .section.show { display:block; }
+    @keyframes slideIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+    .section.full { grid-column: 1 / -1; }
+
+    .sec-header {
+      display:flex; align-items:center; gap:10px;
+      margin-bottom:14px; padding-bottom:10px;
+      border-bottom:1px solid var(--border);
+    }
+    .sec-icon { font-size:20px; }
+    .sec-title {
+      font-size:12px; font-weight:700; letter-spacing:2px;
+      text-transform:uppercase;
+    }
+    .s1 .sec-title { color:var(--accent); }
+    .s2 .sec-title { color:var(--accent2); }
+    .s3 .sec-title { color:var(--accent3); }
+    .s4 .sec-title { color:var(--accent4); }
+    .s5 .sec-title { color:var(--accent5); }
+    .s6 .sec-title { color:var(--accent); }
+
+    /* Row */
+    .row {
+      display:flex; justify-content:space-between; align-items:flex-start;
+      padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.04);
+      gap:10px;
+    }
+    .row:last-child { border-bottom:none; }
+    .row-key {
+      font-family:'Space Mono',monospace;
+      font-size:10px; color:var(--muted);
+      letter-spacing:1px; flex-shrink:0; padding-top:1px;
+    }
+    .row-val {
+      font-family:'Space Mono',monospace;
+      font-size:11px; color:var(--text);
+      font-weight:700; text-align:right; word-break:break-all;
+    }
+
+    /* Battery bar */
+    .bat-bar-wrap { margin-top:10px; }
+    .bat-bar-bg { background:var(--border); height:8px; border-radius:4px; overflow:hidden; }
+    .bat-bar-fill { height:100%; border-radius:4px; transition:width 0.8s ease; }
+
+    /* GPS map link */
+    .map-link {
+      display:block; margin-top:10px;
+      text-align:center; padding:8px;
+      border:1px solid rgba(56,189,248,0.3);
+      color:var(--accent); font-family:'Space Mono',monospace;
+      font-size:10px; letter-spacing:2px;
+      text-decoration:none;
+      transition:background 0.2s;
+    }
+    .map-link:hover { background:rgba(56,189,248,0.08); }
+
+    /* UA box */
+    .ua-box {
+      background:rgba(0,0,0,0.3);
+      border:1px solid var(--border);
+      padding:10px; margin-top:8px;
+      font-family:'Space Mono',monospace;
+      font-size:10px; color:var(--muted);
+      word-break:break-all; line-height:1.7;
+    }
+
+    /* Fingerprint big */
+    .fp-big {
+      font-family:'Space Mono',monospace;
+      font-size:22px; font-weight:700;
+      color:var(--accent); text-align:center;
+      letter-spacing:4px; padding:12px 0;
+    }
+
+    /* Refresh btn */
+    .gps-btn {
+      display:block; width:100%; margin-top:12px;
+      background:transparent; border:1px solid var(--accent2);
+      color:var(--accent2); padding:9px;
+      font-family:'Space Mono',monospace; font-size:10px;
+      letter-spacing:2px; cursor:pointer;
+      transition:background 0.2s;
+    }
+    .gps-btn:hover { background:rgba(251,113,133,0.08); }
+
+    /* Empty state */
+    .empty {
+      text-align:center; padding:48px 20px;
+      color:var(--muted); font-family:'Space Mono',monospace; font-size:12px;
+    }
+    .empty .big { font-size:48px; margin-bottom:16px; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div class="chip">🔍 O'QUV DEMO · HECH QAERGA YUBORILMAYDI</div>
+    <h1>Device Inspector</h1>
+    <p>// brauzer orqali olinadigan barcha ma'lumotlar — faqat ekranda</p>
+  </div>
+
+  <button class="scan-btn" id="scanBtn" onclick="runScan()">
+    🔍 QURILMANI TEKSHIRISH
+  </button>
+
+  <div id="emptyState" class="empty">
+    <div class="big">📱</div>
+    <p>Tekshirishni boshlash uchun<br/>yuqoridagi tugmani bosing</p>
+  </div>
+
+  <div class="sections" id="sections">
+
+    <!-- 1. Device Fingerprint -->
+    <div class="section s1 full" id="secFP">
+      <div class="sec-header">
+        <span class="sec-icon">🆔</span>
+        <span class="sec-title">Canvas Fingerprint</span>
+      </div>
+      <div class="fp-big" id="fpVal">—</div>
+      <div class="row"><span class="row-key">Platform</span><span class="row-val" id="vPlatform">—</span></div>
+      <div class="row"><span class="row-key">Vaqt zonasi</span><span class="row-val" id="vTimezone">—</span></div>
+      <div class="row"><span class="row-key">Til</span><span class="row-val" id="vLang">—</span></div>
+      <div class="row"><span class="row-key">Barcha tillar</span><span class="row-val" id="vLangs">—</span></div>
+      <div class="row"><span class="row-key">Cookie</span><span class="row-val" id="vCookie">—</span></div>
+      <div class="row"><span class="row-key">Do Not Track</span><span class="row-val" id="vDNT">—</span></div>
+      <div class="row"><span class="row-key">Online</span><span class="row-val" id="vOnline">—</span></div>
+    </div>
+
+    <!-- 2. Ekran -->
+    <div class="section s2" id="secScreen">
+      <div class="sec-header">
+        <span class="sec-icon">🖥</span>
+        <span class="sec-title">Ekran</span>
+      </div>
+      <div class="row"><span class="row-key">O'lcham</span><span class="row-val" id="vScreen">—</span></div>
+      <div class="row"><span class="row-key">Oyna o'lchami</span><span class="row-val" id="vWin">—</span></div>
+      <div class="row"><span class="row-key">Pixel Ratio</span><span class="row-val" id="vPixel">—</span></div>
+      <div class="row"><span class="row-key">Rang chuqurligi</span><span class="row-val" id="vColor">—</span></div>
+      <div class="row"><span class="row-key">Orientation</span><span class="row-val" id="vOrient">—</span></div>
+      <div class="row"><span class="row-key">Touch points</span><span class="row-val" id="vTouch">—</span></div>
+    </div>
+
+    <!-- 3. Apparat -->
+    <div class="section s3" id="secHW">
+      <div class="sec-header">
+        <span class="sec-icon">⚙️</span>
+        <span class="sec-title">Apparat</span>
+      </div>
+      <div class="row"><span class="row-key">RAM</span><span class="row-val" id="vRAM">—</span></div>
+      <div class="row"><span class="row-key">CPU Cores</span><span class="row-val" id="vCPU">—</span></div>
+      <div class="row"><span class="row-key">GPU</span><span class="row-val" id="vGPU">—</span></div>
+      <div class="row"><span class="row-key">GPU Vendor</span><span class="row-val" id="vGPUV">—</span></div>
+    </div>
+
+    <!-- 4. Internet -->
+    <div class="section s4" id="secNet">
+      <div class="sec-header">
+        <span class="sec-icon">📶</span>
+        <span class="sec-title">Internet</span>
+      </div>
+      <div class="row"><span class="row-key">Tur</span><span class="row-val" id="vNetType">—</span></div>
+      <div class="row"><span class="row-key">Tezlik</span><span class="row-val" id="vNetDown">—</span></div>
+      <div class="row"><span class="row-key">RTT (ping)</span><span class="row-val" id="vNetRTT">—</span></div>
+      <div class="row"><span class="row-key">Data tejash</span><span class="row-val" id="vNetSave">—</span></div>
+    </div>
+
+    <!-- 5. Batareya -->
+    <div class="section s5" id="secBat">
+      <div class="sec-header">
+        <span class="sec-icon">🔋</span>
+        <span class="sec-title">Batareya</span>
+      </div>
+      <div class="row"><span class="row-key">Daraja</span><span class="row-val" id="vBatLevel">—</span></div>
+      <div class="row"><span class="row-key">Holat</span><span class="row-val" id="vBatCharge">—</span></div>
+      <div class="row"><span class="row-key">To'lishga</span><span class="row-val" id="vBatCT">—</span></div>
+      <div class="row"><span class="row-key">Qolgan vaqt</span><span class="row-val" id="vBatDT">—</span></div>
+      <div class="bat-bar-wrap">
+        <div class="bat-bar-bg"><div class="bat-bar-fill" id="batFill" style="width:0%;background:var(--accent4)"></div></div>
+      </div>
+    </div>
+
+    <!-- 6. GPS -->
+    <div class="section s6" id="secGPS">
+      <div class="sec-header">
+        <span class="sec-icon">📍</span>
+        <span class="sec-title">GPS Joylashuv</span>
+      </div>
+      <div class="row"><span class="row-key">Kenglik</span><span class="row-val" id="vLat">—</span></div>
+      <div class="row"><span class="row-key">Uzunlik</span><span class="row-val" id="vLon">—</span></div>
+      <div class="row"><span class="row-key">Aniqlik</span><span class="row-val" id="vAcc">—</span></div>
+      <div class="row"><span class="row-key">Balandlik</span><span class="row-val" id="vAlt">—</span></div>
+      <div class="row"><span class="row-key">Tezlik</span><span class="row-val" id="vSpd">—</span></div>
+      <a class="map-link" id="mapLink" href="#" target="_blank">🗺 GOOGLE MAPS DA KO'RISH</a>
+      <button class="gps-btn" onclick="getGPS()">🔄 GPS YANGILASH</button>
+    </div>
+
+    <!-- 7. User-Agent -->
+    <div class="section s1 full" id="secUA">
+      <div class="sec-header">
+        <span class="sec-icon">🌐</span>
+        <span class="sec-title">User-Agent (Brauzer identifikatori)</span>
+      </div>
+      <div class="ua-box" id="vUA">—</div>
+      <div class="row" style="margin-top:10px"><span class="row-key">Brauzer</span><span class="row-val" id="vBrowser">—</span></div>
+      <div class="row"><span class="row-key">OS</span><span class="row-val" id="vOS">—</span></div>
+      <div class="row"><span class="row-key">Mobil qurilma</span><span class="row-val" id="vMobile">—</span></div>
+    </div>
+
+  </div><!-- /sections -->
+</div><!-- /wrap -->
+
+<script>
+  /* ── Canvas Fingerprint ── */
+  function canvasFP() {
+    const c = document.createElement('canvas');
+    const ctx = c.getContext('2d');
+    ctx.textBaseline = 'top';
+    ctx.font = '14px Arial';
+    ctx.fillStyle = '#f60'; ctx.fillRect(125,1,62,20);
+    ctx.fillStyle = '#069'; ctx.fillText('FP🔐',2,15);
+    ctx.fillStyle = 'rgba(102,204,0,0.7)'; ctx.fillText('FP🔐',4,17);
+    return c.toDataURL().slice(-60).replace(/[^a-zA-Z0-9]/g,'').slice(0,20).toUpperCase();
+  }
+
+  /* ── WebGL ── */
+  function webglInfo() {
+    try {
+      const c = document.createElement('canvas');
+      const gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+      if (!gl) return { r:'N/A', v:'N/A' };
+      const ext = gl.getExtension('WEBGL_debug_renderer_info');
+      return {
+        r: ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER),
+        v: ext ? gl.getParameter(ext.UNMASKED_VENDOR_WEBGL)   : gl.getParameter(gl.VENDOR)
+      };
+    } catch(e){ return {r:'N/A',v:'N/A'}; }
+  }
+
+  /* ── Brauzer detect ── */
+  function detectBrowser(ua) {
+    if(/Edg/.test(ua))    return 'Microsoft Edge';
+    if(/OPR/.test(ua))    return 'Opera';
+    if(/Chrome/.test(ua)) return 'Google Chrome';
+    if(/Firefox/.test(ua))return 'Mozilla Firefox';
+    if(/Safari/.test(ua)) return 'Apple Safari';
+    return 'Noma\'lum';
+  }
+  function detectOS(ua) {
+    if(/Windows NT 10/.test(ua)) return 'Windows 10/11';
+    if(/Windows NT/.test(ua))    return 'Windows';
+    if(/Android/.test(ua))       return 'Android';
+    if(/iPhone|iPad/.test(ua))   return 'iOS';
+    if(/Mac OS X/.test(ua))      return 'macOS';
+    if(/Linux/.test(ua))         return 'Linux';
+    return 'Noma\'lum';
+  }
+
+  function set(id, val) {
+    const el = document.getElementById(id);
+    if(el) el.textContent = val;
+  }
+
+  /* ── MAIN SCAN ── */
+  async function runScan() {
+    const btn = document.getElementById('scanBtn');
+    btn.classList.add('scanning');
+    btn.textContent = '⏳ Tekshirilmoqda...';
+    document.getElementById('emptyState').style.display = 'none';
+
+    // Show all sections
+    document.querySelectorAll('.section').forEach(s => s.classList.add('show'));
+
+    const ua = navigator.userAgent;
+
+    // ── Fingerprint ──
+    const fp = canvasFP();
+    document.getElementById('fpVal').textContent = fp;
+    set('vPlatform',  navigator.platform || 'N/A');
+    set('vTimezone',  Intl.DateTimeFormat().resolvedOptions().timeZone || 'N/A');
+    set('vLang',      navigator.language || 'N/A');
+    set('vLangs',     (navigator.languages||[]).join(', ') || 'N/A');
+    set('vCookie',    navigator.cookieEnabled ? '✅ Yoqilgan' : '❌ O\'chirilgan');
+    set('vDNT',       navigator.doNotTrack === '1' ? '✅ Ha' : '❌ Yo\'q');
+    set('vOnline',    navigator.onLine ? '✅ Ha' : '❌ Offline');
+
+    // ── Screen ──
+    set('vScreen',  `${screen.width} × ${screen.height}`);
+    set('vWin',     `${window.innerWidth} × ${window.innerHeight}`);
+    set('vPixel',   (window.devicePixelRatio||1).toFixed(2) + 'x');
+    set('vColor',   screen.colorDepth + ' bit');
+    set('vOrient',  screen.orientation ? screen.orientation.type : (screen.width>screen.height?'Landscape':'Portrait'));
+    set('vTouch',   navigator.maxTouchPoints || 0);
+
+    // ── Hardware ──
+    const wgl = webglInfo();
+    set('vRAM',  navigator.deviceMemory ? navigator.deviceMemory + ' GB' : 'N/A');
+    set('vCPU',  navigator.hardwareConcurrency || 'N/A');
+    set('vGPU',  wgl.r);
+    set('vGPUV', wgl.v);
+
+    // ── Network ──
+    const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if(conn) {
+      set('vNetType', conn.effectiveType || 'N/A');
+      set('vNetDown', conn.downlink ? conn.downlink + ' Mbps' : 'N/A');
+      set('vNetRTT',  conn.rtt ? conn.rtt + ' ms' : 'N/A');
+      set('vNetSave', conn.saveData ? '✅ Ha' : '❌ Yo\'q');
+    } else {
+      ['vNetType','vNetDown','vNetRTT','vNetSave'].forEach(id=>set(id,'N/A'));
+    }
+
+    // ── Battery ──
+    if('getBattery' in navigator) {
+      try {
+        const bat = await navigator.getBattery();
+        const pct = Math.round(bat.level * 100);
+        set('vBatLevel',  pct + '%');
+        set('vBatCharge', bat.charging ? '🔌 Quvvatlanmoqda' : '🔋 Quvvatlanmayapti');
+        set('vBatCT',  bat.chargingTime   === Infinity ? 'N/A' : Math.round(bat.chargingTime/60)   + ' daqiqa');
+        set('vBatDT',  bat.dischargingTime=== Infinity ? 'N/A' : Math.round(bat.dischargingTime/60) + ' daqiqa');
+        const fill = document.getElementById('batFill');
+        fill.style.width = pct + '%';
+        fill.style.background = pct > 50 ? 'var(--accent4)' : pct > 20 ? 'var(--accent5)' : 'var(--accent2)';
+      } catch(e) { set('vBatLevel','N/A'); }
+    } else {
+      set('vBatLevel','Bu brauzerda Battery API yo\'q');
+    }
+
+    // ── User-Agent ──
+    set('vUA',      ua);
+    set('vBrowser', detectBrowser(ua));
+    set('vOS',      detectOS(ua));
+    set('vMobile',  /Mobi|Android|iPhone/i.test(ua) ? '✅ Ha' : '❌ Yo\'q');
+
+    // ── GPS (auto so'raydi) ──
+    getGPS();
+
+    btn.classList.remove('scanning');
+    btn.textContent = '🔄 QAYTA TEKSHIRISH';
+  }
+
+  /* ── GPS alohida ── */
+  function getGPS() {
+    set('vLat','⏳ so\'ralmoqda...');
+    set('vLon','...');
+    if(!navigator.geolocation){
+      set('vLat','GPS mavjud emas'); return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos)=>{
+        const lat = pos.coords.latitude.toFixed(6);
+        const lon = pos.coords.longitude.toFixed(6);
+        set('vLat', lat);
+        set('vLon', lon);
+        set('vAcc', pos.coords.accuracy ? Math.round(pos.coords.accuracy)+'m' : 'N/A');
+        set('vAlt', pos.coords.altitude  ? Math.round(pos.coords.altitude)+'m' : 'N/A');
+        set('vSpd', pos.coords.speed     ? pos.coords.speed.toFixed(1)+' m/s'  : 'N/A');
+        const link = document.getElementById('mapLink');
+        link.href = `https://maps.google.com/?q=${lat},${lon}`;
+        link.style.borderColor = 'var(--accent4)';
+        link.style.color = 'var(--accent4)';
+      },
+      (err)=>{
+        const m = {1:'Ruxsat berilmadi ❌',2:'Signal yo\'q ❌',3:'Vaqt tugadi ❌'};
+        set('vLat', m[err.code] || 'Xato');
+        set('vLon','—');
+      },
+      {enableHighAccuracy:true, timeout:12000, maximumAge:0}
+    );
+  }
+</script>
+</body>
+</html>
