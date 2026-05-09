@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Manhattan Navigator Pro</title>
+<title>Manhattan Live Map</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
@@ -11,7 +11,7 @@
 html,body{
   margin:0;
   height:100%;
-  font-family:system-ui, sans-serif;
+  font-family:system-ui,sans-serif;
 }
 
 #map{
@@ -19,192 +19,170 @@ html,body{
   width:100%;
 }
 
-/* bottom panel */
-#panel{
-  position:fixed;
-  bottom:0;
-  left:0;
-  right:0;
-  background:#fff;
-  border-radius:16px 16px 0 0;
-  box-shadow:0 -4px 20px rgba(0,0,0,0.15);
-  padding:14px;
-  z-index:999;
-  max-height:45vh;
-  overflow:auto;
-}
-
-#title{
-  font-size:16px;
-  font-weight:700;
-  margin-bottom:8px;
-}
-
-.info{
+/* popup styling */
+.leaflet-popup-content{
   font-size:13px;
-  color:#444;
   line-height:1.4;
-  margin-bottom:10px;
 }
 
-.btn{
-  display:block;
-  text-align:center;
-  padding:12px;
-  margin-top:6px;
-  border-radius:10px;
+.name{
   font-weight:700;
-  text-decoration:none;
-  font-size:14px;
+  margin-bottom:4px;
 }
 
-.go{
+/* GO button */
+.go-btn{
+  display:inline-block;
+  margin-top:6px;
+  padding:6px 10px;
   background:#1a73e8;
   color:#fff;
+  border-radius:6px;
+  font-size:12px;
+  text-decoration:none;
 }
 
-.close{
-  background:#eee;
-  color:#333;
-  margin-top:10px;
-}
-
-/* locate */
-#locateBtn{
+/* legend */
+.legend{
   position:fixed;
-  top:12px;
-  right:12px;
+  top:10px;
+  left:10px;
   z-index:1000;
   background:#fff;
-  border:none;
-  padding:10px 12px;
+  padding:8px 10px;
   border-radius:10px;
   box-shadow:0 2px 10px rgba(0,0,0,0.15);
-  font-weight:600;
+  font-size:12px;
+}
+
+.dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  display:inline-block;
+  margin-right:5px;
 }
 </style>
 </head>
 
 <body>
 
-<button id="locateBtn">📍 Men</button>
-<div id="map"></div>
-
-<div id="panel">
-  <div id="title">Joyni tanlang</div>
-  <div class="info">Marker ustiga bosing va tafsilotlarni ko‘ring</div>
-  <div id="content"></div>
+<div class="legend">
+<div><span class="dot" style="background:#e24b4a"></span>Juda band</div>
+<div><span class="dot" style="background:#ef9f27"></span>O‘rtacha</div>
+<div><span class="dot" style="background:#639922"></span>Kam band</div>
 </div>
+
+<div id="map"></div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
 
-// ==== DATA ====
+// ================= DATA =================
+// busy level: red / orange / green
 const places = [
-{
-name:"Times Square",
-lat:40.7580,lng:-73.9855,
-info:`Dushanba–Juma: 16:00–22:00<br>Shanba–Yakshanba: 14:00–23:00`
-},
-{
-name:"Central Park",
-lat:40.7829,lng:-73.9654,
-info:`Dushanba–Juma: 07:00–10:00, 17:00–20:00<br>Shanba–Yakshanba: 10:00–18:00`
-},
-{
-name:"Wall Street / Financial District",
-lat:40.7060,lng:-74.0086,
-info:`Dushanba–Juma: 08:00–16:00<br>Weekend: juda kam odam`
-},
-{
-name:"5th Avenue",
-lat:40.7750,lng:-73.9655,
-info:`Dushanba–Juma: 12:00–20:00<br>Shanba–Yakshanba: 11:00–21:00`
-},
-{
-name:"Grand Central Terminal",
-lat:40.7527,lng:-73.9772,
-info:`Dushanba–Juma: 07:00–10:00, 16:00–19:00<br>Weekend: 11:00–17:00`
-},
-{
-name:"Bryant Park",
-lat:40.7536,lng:-73.9832,
-info:`Dushanba–Juma: 12:00–14:00, 17:00–19:00<br>Shanba–Yakshanba: 12:00–18:00`
-},
-{
-name:"SoHo",
-lat:40.7233,lng:-74.0030,
-info:`Dushanba–Juma: 13:00–19:00<br>Shanba–Yakshanba: 11:00–20:00`
-},
-{
-name:"Hudson Yards",
-lat:40.7540,lng:-74.0027,
-info:`Dushanba–Juma: 12:00–20:00<br>Shanba–Yakshanba: 11:00–21:00`
-},
-{
-name:"High Line",
-lat:40.7479,lng:-74.0049,
-info:`Dushanba–Juma: 12:00–18:00<br>Shanba–Yakshanba: 10:00–19:00`
-},
-{
-name:"Chinatown / Little Italy",
-lat:40.7158,lng:-73.9970,
-info:`Dushanba–Juma: 12:00–19:00<br>Shanba–Yakshanba: 11:00–21:00`
-}
+{n:"Times Square",lat:40.7580,lng:-73.9855,l:"red"},
+{n:"Central Park",lat:40.7829,lng:-73.9654,l:"orange"},
+{n:"Wall Street",lat:40.7060,lng:-74.0086,l:"green"},
+{n:"5th Avenue",lat:40.7750,lng:-73.9655,l:"red"},
+{n:"Grand Central",lat:40.7527,lng:-73.9772,l:"orange"},
+{n:"Bryant Park",lat:40.7536,lng:-73.9832,l:"orange"},
+{n:"SoHo",lat:40.7233,lng:-74.0030,l:"orange"},
+{n:"Hudson Yards",lat:40.7540,lng:-74.0027,l:"orange"},
+{n:"High Line",lat:40.7479,lng:-74.0049,l:"orange"},
+{n:"Chinatown",lat:40.7158,lng:-73.9970,l:"orange"}
 ];
 
-// ==== MAP ====
-const map = L.map('map',{zoomControl:false})
-.setView([40.7580,-73.9855],12);
+// colors
+const colors={
+red:"#e24b4a",
+orange:"#ef9f27",
+green:"#639922"
+};
+
+// ================= MAP =================
+const map = L.map('map').setView([40.7580,-73.9855],12);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-maxZoom:19,
 attribution:false
 }).addTo(map);
 
-const panel = document.getElementById("content");
-const title = document.getElementById("title");
-
-// ==== MARKERS ====
+// ================= MARKERS =================
 places.forEach(p=>{
 
-const marker = L.marker([p.lat,p.lng]).addTo(map);
+const icon = L.divIcon({
+className:"",
+html:`<div style="
+width:14px;height:14px;
+border-radius:50%;
+background:${colors[p.l]};
+border:2px solid #fff;
+box-shadow:0 1px 6px rgba(0,0,0,0.3);
+"></div>`
+});
 
-marker.on("click",()=>{
+const marker = L.marker([p.lat,p.lng],{icon}).addTo(map);
 
-title.innerHTML = p.name;
+// popup (minimal + fast)
+const google = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
+
+marker.bindPopup(`
+<div class="name">${p.n}</div>
+<div style="font-size:11px;color:#666;">
+Busy: ${p.l === "red" ? "Juda band" : p.l === "orange" ? "O‘rtacha" : "Kam band"}
+</div>
+<a class="go-btn" href="${google}" target="_blank">GO</a>
+`);
+
+});
+
+// ================= REAL TIME SIMULATION =================
+// (real API yo‘q, lekin live effect berildi)
+setInterval(()=>{
+
+places.forEach(p=>{
+const r = Math.random();
+
+if(r < 0.33) p.l="red";
+else if(r < 0.66) p.l="orange";
+else p.l="green";
+});
+
+map.eachLayer(layer=>{
+if(layer instanceof L.Marker){
+map.removeLayer(layer);
+}
+});
+
+// redraw
+places.forEach(p=>{
+
+const icon = L.divIcon({
+className:"",
+html:`<div style="
+width:14px;height:14px;
+border-radius:50%;
+background:${colors[p.l]};
+border:2px solid #fff;
+"></div>`
+});
+
+const marker = L.marker([p.lat,p.lng],{icon}).addTo(map);
 
 const google = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
-const apple = `http://maps.apple.com/?daddr=${p.lat},${p.lng}`;
 
-panel.innerHTML = `
-<div class="info">${p.info}</div>
-
-<a class="btn go" href="${google}" target="_blank">🚗 Google Maps orqali borish</a>
-<a class="btn go" href="${apple}">🍎 Apple Maps orqali borish</a>
-
-<a class="btn close" onclick="closePanel()">Yopish</a>
-`;
-});
+marker.bindPopup(`
+<div class="name">${p.n}</div>
+<div style="font-size:11px;">
+Busy: ${p.l}
+</div>
+<a class="go-btn" href="${google}" target="_blank">GO</a>
+`);
 
 });
 
-// close panel
-function closePanel(){
-title.innerHTML="Joyni tanlang";
-panel.innerHTML="Marker ustiga bosing";
-}
-
-// locate user
-document.getElementById("locateBtn").onclick = () => {
-map.locate({setView:true,maxZoom:14});
-
-map.on("locationfound",e=>{
-L.marker(e.latlng).addTo(map)
-.bindPopup("Siz shu yerdasiz").openPopup();
-});
-};
+},8000); // 8 sekundda update
 
 </script>
 
