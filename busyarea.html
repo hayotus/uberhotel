@@ -1,93 +1,278 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uz">
 <head>
 <meta charset="UTF-8">
-<title>NYC District Map</title>
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manhattan — Band Vaqtlar Xaritasi</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-    body {
-        margin: 0;
-        padding: 0;
-    }
-    #map {
-        height: 100vh;
-        width: 100%;
-    }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'DM Sans',sans-serif;
+    background:#f5f2eb;
+    min-height:100vh;
+    padding:2rem 1rem;
+    color:#2c2c2a;
+  }
+  h1{
+    font-size:1.6rem;
+    font-weight:600;
+    letter-spacing:-0.02em;
+    margin-bottom:0.3rem;
+  }
+  .subtitle{
+    font-size:0.85rem;
+    color:#888780;
+    margin-bottom:1.5rem;
+    font-family:'DM Mono',monospace;
+  }
+  .layout{
+    display:grid;
+    grid-template-columns:1fr 320px;
+    gap:1.5rem;
+    max-width:1000px;
+    margin:0 auto;
+  }
+  @media(max-width:720px){
+    .layout{grid-template-columns:1fr}
+    .sidebar{order:2}
+    .map-wrap{order:1}
+  }
+  .map-wrap{
+    background:#fff;
+    border-radius:16px;
+    border:1px solid #e0ddd4;
+    overflow:hidden;
+    box-shadow:0 2px 12px rgba(0,0,0,0.06);
+  }
+  svg.map{width:100%;height:auto;display:block}
+
+  .sidebar{display:flex;flex-direction:column;gap:0.75rem}
+
+  .card{
+    background:#fff;
+    border-radius:12px;
+    border:1px solid #e0ddd4;
+    padding:0.9rem 1rem;
+    cursor:pointer;
+    transition:border-color 0.15s, box-shadow 0.15s;
+  }
+  .card:hover,.card.active{
+    border-color:#b4b2a9;
+    box-shadow:0 2px 10px rgba(0,0,0,0.08);
+  }
+  .card.active{border-color:#378add;box-shadow:0 0 0 2px rgba(55,138,221,0.18)}
+  .card-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .num{
+    width:22px;height:22px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:600;color:#fff;flex-shrink:0;
+  }
+  .card-name{font-size:13px;font-weight:500}
+  .times-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+  .time-block{background:#f5f2eb;border-radius:6px;padding:5px 7px}
+  .time-label{font-size:10px;color:#888780;font-family:'DM Mono',monospace;margin-bottom:2px}
+  .time-val{font-size:11px;font-weight:500;color:#2c2c2a;line-height:1.4}
+  .badge{
+    display:inline-block;font-size:10px;font-weight:600;
+    padding:2px 8px;border-radius:20px;margin-top:5px;
+    font-family:'DM Mono',monospace;
+  }
+  .badge-red{background:#fcebeb;color:#a32d2d}
+  .badge-orange{background:#faeeda;color:#854f0b}
+  .badge-green{background:#eaf3de;color:#3b6d11}
+
+  .legend-row{display:flex;gap:14px;flex-wrap:wrap;margin-top:0.5rem}
+  .leg{display:flex;align-items:center;gap:5px;font-size:12px;color:#5f5e5a}
+  .leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+
+  /* tooltip */
+  #tooltip{
+    position:fixed;
+    background:#fff;
+    border:1px solid #d3d1c7;
+    border-radius:10px;
+    padding:10px 13px;
+    font-size:12px;
+    max-width:210px;
+    pointer-events:none;
+    display:none;
+    z-index:999;
+    box-shadow:0 4px 16px rgba(0,0,0,0.12);
+  }
+  #tooltip strong{font-size:13px;display:block;margin-bottom:6px}
+  #tooltip .t-row{margin-bottom:3px}
+  #tooltip .t-lbl{color:#888780;font-size:10px;font-family:'DM Mono',monospace}
+  #tooltip .t-val{font-size:11px;font-weight:500}
 </style>
 </head>
-
 <body>
 
-<div id="map"></div>
+<div style="max-width:1000px;margin:0 auto 1rem">
+  <h1>🗽 Manhattan — Band Vaqtlar</h1>
+  <p class="subtitle">10 ta mashhur joy · hover yoki bosib ko'ring</p>
+  <div class="legend-row">
+    <div class="leg"><div class="leg-dot" style="background:#e24b4a"></div>Juda band</div>
+    <div class="leg"><div class="leg-dot" style="background:#ef9f27"></div>O'rtacha band</div>
+    <div class="leg"><div class="leg-dot" style="background:#639922"></div>Kam band</div>
+  </div>
+</div>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<div class="layout">
+  <div class="map-wrap">
+    <svg class="map" viewBox="0 0 400 600" xmlns="http://www.w3.org/2000/svg">
+      <!-- water -->
+      <rect width="400" height="600" fill="#ddd8c8"/>
+      <rect x="0" y="0" width="42" height="600" fill="#c4dce8"/>
+      <rect x="358" y="0" width="42" height="600" fill="#c4dce8"/>
+      <!-- land -->
+      <polygon points="42,600 42,0 358,0 358,600" fill="#e8e4d4"/>
+      <!-- central park -->
+      <rect x="112" y="62" width="178" height="122" fill="#b4d8a0" rx="3"/>
+      <text x="201" y="130" text-anchor="middle" font-size="9" fill="#3b6d11" font-family="DM Sans,sans-serif" font-weight="500">Central Park</text>
+      <!-- bryant park small -->
+      <rect x="154" y="372" width="50" height="26" fill="#c8e0b0" rx="2"/>
+      <!-- avenues -->
+      <line x1="58" y1="0" x2="58" y2="600" stroke="#ccc8b8" stroke-width="1.5"/>
+      <line x1="98" y1="0" x2="98" y2="600" stroke="#ccc8b8" stroke-width="1.5"/>
+      <line x1="138" y1="0" x2="138" y2="600" stroke="#ccc8b8" stroke-width="1.5"/>
+      <line x1="178" y1="0" x2="178" y2="600" stroke="#ccc8b8" stroke-width="1.5"/>
+      <line x1="202" y1="0" x2="202" y2="600" stroke="#c8a050" stroke-width="2.5"/>
+      <line x1="228" y1="0" x2="228" y2="600" stroke="#ccc8b8" stroke-width="1.5"/>
+      <line x1="268" y1="0" x2="268" y2="600" stroke="#ccc8b8" stroke-width="1.5"/>
+      <line x1="308" y1="0" x2="308" y2="600" stroke="#ccc8b8" stroke-width="1.5"/>
+      <line x1="348" y1="0" x2="348" y2="600" stroke="#ccc8b8" stroke-width="1.5"/>
+      <!-- streets -->
+      <line x1="42" y1="62" x2="358" y2="62" stroke="#ccc8b8" stroke-width="1"/>
+      <line x1="42" y1="184" x2="358" y2="184" stroke="#ccc8b8" stroke-width="1"/>
+      <line x1="42" y1="224" x2="358" y2="224" stroke="#ccc8b8" stroke-width="1"/>
+      <line x1="42" y1="264" x2="358" y2="264" stroke="#ccc8b8" stroke-width="1"/>
+      <line x1="42" y1="304" x2="358" y2="304" stroke="#ccc8b8" stroke-width="1"/>
+      <line x1="42" y1="344" x2="358" y2="344" stroke="#ccc8b8" stroke-width="1"/>
+      <line x1="42" y1="384" x2="358" y2="384" stroke="#ccc8b8" stroke-width="1"/>
+      <line x1="42" y1="424" x2="358" y2="424" stroke="#ccc8b8" stroke-width="1"/>
+      <line x1="42" y1="464" x2="358" y2="464" stroke="#ccc8b8" stroke-width="1"/>
+      <line x1="42" y1="504" x2="358" y2="504" stroke="#ccc8b8" stroke-width="1"/>
+      <line x1="42" y1="544" x2="358" y2="544" stroke="#ccc8b8" stroke-width="1"/>
+      <!-- labels -->
+      <text x="202" y="14" text-anchor="middle" font-size="8" fill="#9a8a50" font-family="DM Mono,monospace">5th Avenue</text>
+      <text x="12" y="308" text-anchor="middle" font-size="7.5" fill="#7a9ab0" font-family="DM Sans,sans-serif" transform="rotate(-90,12,308)">Hudson River</text>
+      <text x="388" y="308" text-anchor="middle" font-size="7.5" fill="#7a9ab0" font-family="DM Sans,sans-serif" transform="rotate(90,388,308)">East River</text>
+      <!-- north label -->
+      <text x="202" y="30" text-anchor="middle" font-size="8" fill="#aaa" font-family="DM Sans,sans-serif">↑ N</text>
+      <!-- pins rendered by JS -->
+      <g id="map-pins"></g>
+    </svg>
+  </div>
+
+  <div class="sidebar" id="sidebar"></div>
+</div>
+
+<div id="tooltip"></div>
 
 <script>
-// ----------------------
-// MAP INIT
-// ----------------------
-var map = L.map('map').setView([40.73, -73.98], 12);
-
-// Base layer
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: 'NYC Map'
-}).addTo(map);
-
-// ----------------------
-// DISTRICTS DATA
-// ----------------------
-const districts = [
-    {
-        name: "Soho",
-        color: "#00ff00",
-        coords: [
-            [40.724, -74.002],
-            [40.725, -73.995],
-            [40.720, -73.995],
-            [40.720, -74.002]
-        ]
-    },
-    {
-        name: "Midtown",
-        color: "#0000ff",
-        coords: [
-            [40.760, -73.990],
-            [40.760, -73.975],
-            [40.750, -73.975],
-            [40.750, -73.990]
-        ]
-    },
-    {
-        name: "Brooklyn Test Area",
-        color: "#ff0000",
-        coords: [
-            [40.695, -73.990],
-            [40.695, -73.980],
-            [40.690, -73.980],
-            [40.690, -73.990]
-        ]
-    }
+const places=[
+  {id:1,name:"Times Square",x:188,y:316,level:"red",
+   wd:"16:00–22:00",we:"14:00–23:00"},
+  {id:2,name:"Central Park",x:202,y:104,level:"orange",
+   wd:"07:00–10:00, 17:00–20:00",we:"10:00–18:00"},
+  {id:3,name:"Wall St / Financial District",x:222,y:570,level:"green",
+   wd:"08:00–16:00",we:"Juda kam odam"},
+  {id:4,name:"5th Avenue (shopping)",x:212,y:286,level:"red",
+   wd:"12:00–20:00",we:"11:00–21:00"},
+  {id:5,name:"Grand Central Terminal",x:234,y:342,level:"orange",
+   wd:"07:00–10:00, 16:00–19:00",we:"11:00–17:00"},
+  {id:6,name:"Bryant Park",x:188,y:372,level:"orange",
+   wd:"12:00–14:00, 17:00–19:00",we:"12:00–18:00"},
+  {id:7,name:"SoHo",x:198,y:496,level:"orange",
+   wd:"13:00–19:00",we:"11:00–20:00"},
+  {id:8,name:"Hudson Yards",x:128,y:348,level:"orange",
+   wd:"12:00–20:00",we:"11:00–21:00"},
+  {id:9,name:"High Line",x:112,y:392,level:"orange",
+   wd:"12:00–18:00",we:"10:00–19:00"},
+  {id:10,name:"Chinatown / Little Italy",x:218,y:538,level:"orange",
+   wd:"12:00–19:00",we:"11:00–21:00"},
 ];
 
-// ----------------------
-// DRAW ON MAP
-// ----------------------
-districts.forEach(d => {
+const colors={red:"#e24b4a",orange:"#ef9f27",green:"#639922"};
+const labels={red:"Juda band",orange:"O'rtacha band",green:"Kam band"};
+const badgeClass={red:"badge-red",orange:"badge-orange",green:"badge-green"};
 
-    let polygon = L.polygon(d.coords, {
-        color: d.color,
-        fillColor: d.color,
-        fillOpacity: 0.35,
-        weight: 2
-    }).addTo(map);
+const svg=document.getElementById("map-pins");
+const sidebar=document.getElementById("sidebar");
+const tt=document.getElementById("tooltip");
 
-    polygon.bindPopup("<b>" + d.name + "</b>");
+places.forEach(p=>{
+  // SVG foreignObject pin
+  const fo=document.createElementNS("http://www.w3.org/2000/svg","foreignObject");
+  fo.setAttribute("x",p.x-13);
+  fo.setAttribute("y",p.y-13);
+  fo.setAttribute("width","26");
+  fo.setAttribute("height","26");
+  fo.style.overflow="visible";
 
+  const d=document.createElement("div");
+  d.style.cssText=`width:26px;height:26px;border-radius:50%;background:${colors[p.level]};
+    display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;
+    color:#fff;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.22);
+    cursor:pointer;font-family:DM Sans,sans-serif;transition:transform 0.15s;`;
+  d.textContent=p.id;
+  d.dataset.id=p.id;
+
+  d.addEventListener("mouseenter",e=>showTT(e,p));
+  d.addEventListener("mouseleave",hideTT);
+  d.addEventListener("mousemove",moveTT);
+  d.addEventListener("click",()=>activateCard(p.id));
+  d.addEventListener("mouseenter",()=>d.style.transform="scale(1.3)");
+  d.addEventListener("mouseleave",()=>d.style.transform="scale(1)");
+
+  fo.appendChild(d);
+  svg.appendChild(fo);
+
+  // sidebar card
+  const card=document.createElement("div");
+  card.className="card";
+  card.id="card-"+p.id;
+  card.innerHTML=`
+    <div class="card-head">
+      <div class="num" style="background:${colors[p.level]}">${p.id}</div>
+      <span class="card-name">${p.name}</span>
+    </div>
+    <div class="times-grid">
+      <div class="time-block">
+        <div class="time-label">Du–Ju</div>
+        <div class="time-val">${p.wd}</div>
+      </div>
+      <div class="time-block">
+        <div class="time-label">Sha–Yak</div>
+        <div class="time-val">${p.we}</div>
+      </div>
+    </div>
+    <span class="badge ${badgeClass[p.level]}">${labels[p.level]}</span>
+  `;
+  card.addEventListener("click",()=>activateCard(p.id));
+  sidebar.appendChild(card);
 });
 
-</script>
+function activateCard(id){
+  document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
+  const card=document.getElementById("card-"+id);
+  if(card){card.classList.add("active");card.scrollIntoView({behavior:"smooth",block:"nearest"});}
+}
 
+function showTT(e,p){
+  tt.innerHTML=`<strong>${p.id}. ${p.name}</strong>
+    <div class="t-row"><div class="t-lbl">Du–Ju</div><div class="t-val">${p.wd}</div></div>
+    <div class="t-row"><div class="t-lbl">Sha–Yak</div><div class="t-val">${p.we}</div></div>`;
+  tt.style.display="block";
+  positionTT(e);
+}
+function moveTT(e){positionTT(e)}
+function positionTT(e){
+  tt.style.left=(e.clientX+14)+"px";
+  tt.style.top=(e.clientY-16)+"px";
+}
+function hideTT(){tt.style.display="none"}
+</script>
 </body>
 </html>
