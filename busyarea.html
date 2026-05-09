@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Manhattan Navigator</title>
+<title>Manhattan Navigator Pro</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
@@ -20,24 +19,32 @@ html,body{
   width:100%;
 }
 
-/* bottom info panel */
+/* bottom panel */
 #panel{
   position:fixed;
   bottom:0;
   left:0;
   right:0;
   background:#fff;
-  border-top-left-radius:16px;
-  border-top-right-radius:16px;
+  border-radius:16px 16px 0 0;
   box-shadow:0 -4px 20px rgba(0,0,0,0.15);
-  padding:12px;
+  padding:14px;
   z-index:999;
+  max-height:45vh;
+  overflow:auto;
 }
 
 #title{
+  font-size:16px;
   font-weight:700;
-  font-size:15px;
-  margin-bottom:6px;
+  margin-bottom:8px;
+}
+
+.info{
+  font-size:13px;
+  color:#444;
+  line-height:1.4;
+  margin-bottom:10px;
 }
 
 .btn{
@@ -46,20 +53,23 @@ html,body{
   padding:12px;
   margin-top:6px;
   border-radius:10px;
+  font-weight:700;
   text-decoration:none;
-  font-weight:600;
   font-size:14px;
 }
 
-.gmap{background:#1a73e8;color:#fff;}
-.apple{background:#000;color:#fff;}
-
-.small{
-  font-size:12px;
-  color:#777;
+.go{
+  background:#1a73e8;
+  color:#fff;
 }
 
-/* locate button */
+.close{
+  background:#eee;
+  color:#333;
+  margin-top:10px;
+}
+
+/* locate */
 #locateBtn{
   position:fixed;
   top:12px;
@@ -70,7 +80,6 @@ html,body{
   padding:10px 12px;
   border-radius:10px;
   box-shadow:0 2px 10px rgba(0,0,0,0.15);
-  font-size:13px;
   font-weight:600;
 }
 </style>
@@ -83,71 +92,118 @@ html,body{
 
 <div id="panel">
   <div id="title">Joyni tanlang</div>
-  <div class="small">Marker ustiga bosing</div>
-  <div id="links"></div>
+  <div class="info">Marker ustiga bosing va tafsilotlarni ko‘ring</div>
+  <div id="content"></div>
 </div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
 
-// ==== DATA (eng mashhur 10 joy) ====
+// ==== DATA ====
 const places = [
-  {name:"Times Square",lat:40.7580,lng:-73.9855},
-  {name:"Central Park",lat:40.7829,lng:-73.9654},
-  {name:"Wall Street",lat:40.7060,lng:-74.0086},
-  {name:"5th Avenue",lat:40.7750,lng:-73.9655},
-  {name:"Grand Central",lat:40.7527,lng:-73.9772},
-  {name:"Bryant Park",lat:40.7536,lng:-73.9832},
-  {name:"SoHo",lat:40.7233,lng:-74.0030},
-  {name:"Hudson Yards",lat:40.7540,lng:-74.0027},
-  {name:"High Line",lat:40.7479,lng:-74.0049},
-  {name:"Chinatown",lat:40.7158,lng:-73.9970},
+{
+name:"Times Square",
+lat:40.7580,lng:-73.9855,
+info:`Dushanba–Juma: 16:00–22:00<br>Shanba–Yakshanba: 14:00–23:00`
+},
+{
+name:"Central Park",
+lat:40.7829,lng:-73.9654,
+info:`Dushanba–Juma: 07:00–10:00, 17:00–20:00<br>Shanba–Yakshanba: 10:00–18:00`
+},
+{
+name:"Wall Street / Financial District",
+lat:40.7060,lng:-74.0086,
+info:`Dushanba–Juma: 08:00–16:00<br>Weekend: juda kam odam`
+},
+{
+name:"5th Avenue",
+lat:40.7750,lng:-73.9655,
+info:`Dushanba–Juma: 12:00–20:00<br>Shanba–Yakshanba: 11:00–21:00`
+},
+{
+name:"Grand Central Terminal",
+lat:40.7527,lng:-73.9772,
+info:`Dushanba–Juma: 07:00–10:00, 16:00–19:00<br>Weekend: 11:00–17:00`
+},
+{
+name:"Bryant Park",
+lat:40.7536,lng:-73.9832,
+info:`Dushanba–Juma: 12:00–14:00, 17:00–19:00<br>Shanba–Yakshanba: 12:00–18:00`
+},
+{
+name:"SoHo",
+lat:40.7233,lng:-74.0030,
+info:`Dushanba–Juma: 13:00–19:00<br>Shanba–Yakshanba: 11:00–20:00`
+},
+{
+name:"Hudson Yards",
+lat:40.7540,lng:-74.0027,
+info:`Dushanba–Juma: 12:00–20:00<br>Shanba–Yakshanba: 11:00–21:00`
+},
+{
+name:"High Line",
+lat:40.7479,lng:-74.0049,
+info:`Dushanba–Juma: 12:00–18:00<br>Shanba–Yakshanba: 10:00–19:00`
+},
+{
+name:"Chinatown / Little Italy",
+lat:40.7158,lng:-73.9970,
+info:`Dushanba–Juma: 12:00–19:00<br>Shanba–Yakshanba: 11:00–21:00`
+}
 ];
 
-// ==== MAP INIT (fast + mobile friendly) ====
-const map = L.map('map', {
-  zoomControl:false
-}).setView([40.7580, -73.9855], 12);
+// ==== MAP ====
+const map = L.map('map',{zoomControl:false})
+.setView([40.7580,-73.9855],12);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-  attribution:false
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+maxZoom:19,
+attribution:false
 }).addTo(map);
 
-// ==== UI ELEMENTS ====
-const panel = document.getElementById("panel");
+const panel = document.getElementById("content");
 const title = document.getElementById("title");
-const links = document.getElementById("links");
 
 // ==== MARKERS ====
-places.forEach(p => {
+places.forEach(p=>{
 
-  const marker = L.marker([p.lat, p.lng]).addTo(map);
+const marker = L.marker([p.lat,p.lng]).addTo(map);
 
-  marker.on("click", () => {
+marker.on("click",()=>{
 
-    title.innerText = p.name;
+title.innerHTML = p.name;
 
-    const google = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
-    const apple = `http://maps.apple.com/?daddr=${p.lat},${p.lng}`;
+const google = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
+const apple = `http://maps.apple.com/?daddr=${p.lat},${p.lng}`;
 
-    links.innerHTML = `
-      <a class="btn gmap" href="${google}" target="_blank">Google Maps → GO</a>
-      <a class="btn apple" href="${apple}">Apple Maps → GO</a>
-    `;
-  });
+panel.innerHTML = `
+<div class="info">${p.info}</div>
+
+<a class="btn go" href="${google}" target="_blank">🚗 Google Maps orqali borish</a>
+<a class="btn go" href="${apple}">🍎 Apple Maps orqali borish</a>
+
+<a class="btn close" onclick="closePanel()">Yopish</a>
+`;
+});
 
 });
 
-// ==== LOCATION BUTTON ====
-document.getElementById("locateBtn").onclick = () => {
-  map.locate({setView:true, maxZoom:14});
+// close panel
+function closePanel(){
+title.innerHTML="Joyni tanlang";
+panel.innerHTML="Marker ustiga bosing";
+}
 
-  map.on("locationfound", e => {
-    L.marker(e.latlng).addTo(map)
-      .bindPopup("Siz shu yerdasiz").openPopup();
-  });
+// locate user
+document.getElementById("locateBtn").onclick = () => {
+map.locate({setView:true,maxZoom:14});
+
+map.on("locationfound",e=>{
+L.marker(e.latlng).addTo(map)
+.bindPopup("Siz shu yerdasiz").openPopup();
+});
 };
 
 </script>
