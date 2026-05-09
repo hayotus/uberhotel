@@ -1,54 +1,103 @@
-```html
 <!DOCTYPE html>
 <html lang="uz">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Manhattan Real Map</title>
+
+<title>Manhattan Navigator</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
 <style>
-body{
+html,body{
   margin:0;
-  font-family:Arial, sans-serif;
-  background:#f5f2eb;
+  height:100%;
+  font-family:system-ui, sans-serif;
 }
+
 #map{
   height:100vh;
   width:100%;
 }
-.popup-title{
+
+/* bottom info panel */
+#panel{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  background:#fff;
+  border-top-left-radius:16px;
+  border-top-right-radius:16px;
+  box-shadow:0 -4px 20px rgba(0,0,0,0.15);
+  padding:12px;
+  z-index:999;
+}
+
+#title{
+  font-weight:700;
+  font-size:15px;
+  margin-bottom:6px;
+}
+
+.btn{
+  display:block;
+  text-align:center;
+  padding:12px;
+  margin-top:6px;
+  border-radius:10px;
+  text-decoration:none;
   font-weight:600;
   font-size:14px;
 }
-.go-btn{
-  display:inline-block;
-  margin-top:8px;
-  padding:7px 12px;
-  background:#378add;
-  color:#fff;
-  border-radius:6px;
-  text-decoration:none;
+
+.gmap{background:#1a73e8;color:#fff;}
+.apple{background:#000;color:#fff;}
+
+.small{
+  font-size:12px;
+  color:#777;
+}
+
+/* locate button */
+#locateBtn{
+  position:fixed;
+  top:12px;
+  right:12px;
+  z-index:1000;
+  background:#fff;
+  border:none;
+  padding:10px 12px;
+  border-radius:10px;
+  box-shadow:0 2px 10px rgba(0,0,0,0.15);
   font-size:13px;
+  font-weight:600;
 }
 </style>
 </head>
 
 <body>
 
+<button id="locateBtn">📍 Men</button>
 <div id="map"></div>
+
+<div id="panel">
+  <div id="title">Joyni tanlang</div>
+  <div class="small">Marker ustiga bosing</div>
+  <div id="links"></div>
+</div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
-// Manhattan locations
+
+// ==== DATA (eng mashhur 10 joy) ====
 const places = [
   {name:"Times Square",lat:40.7580,lng:-73.9855},
   {name:"Central Park",lat:40.7829,lng:-73.9654},
   {name:"Wall Street",lat:40.7060,lng:-74.0086},
   {name:"5th Avenue",lat:40.7750,lng:-73.9655},
-  {name:"Grand Central Terminal",lat:40.7527,lng:-73.9772},
+  {name:"Grand Central",lat:40.7527,lng:-73.9772},
   {name:"Bryant Park",lat:40.7536,lng:-73.9832},
   {name:"SoHo",lat:40.7233,lng:-74.0030},
   {name:"Hudson Yards",lat:40.7540,lng:-74.0027},
@@ -56,34 +105,52 @@ const places = [
   {name:"Chinatown",lat:40.7158,lng:-73.9970},
 ];
 
-// map init
-const map = L.map('map').setView([40.7580, -73.9855], 12);
+// ==== MAP INIT (fast + mobile friendly) ====
+const map = L.map('map', {
+  zoomControl:false
+}).setView([40.7580, -73.9855], 12);
 
-// tiles
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
+  attribution:false
 }).addTo(map);
 
-// markers
+// ==== UI ELEMENTS ====
+const panel = document.getElementById("panel");
+const title = document.getElementById("title");
+const links = document.getElementById("links");
+
+// ==== MARKERS ====
 places.forEach(p => {
 
   const marker = L.marker([p.lat, p.lng]).addTo(map);
 
-  // Google Maps direction
-  const googleLink = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
+  marker.on("click", () => {
 
-  // Apple Maps (iPhone)
-  const appleLink = `http://maps.apple.com/?daddr=${p.lat},${p.lng}`;
+    title.innerText = p.name;
 
-  marker.bindPopup(`
-    <div class="popup-title">${p.name}</div>
-    <a class="go-btn" href="${googleLink}" target="_blank">GO (Google)</a><br>
-    <a class="go-btn" href="${appleLink}">GO (Apple)</a>
-  `);
+    const google = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
+    const apple = `http://maps.apple.com/?daddr=${p.lat},${p.lng}`;
+
+    links.innerHTML = `
+      <a class="btn gmap" href="${google}" target="_blank">Google Maps → GO</a>
+      <a class="btn apple" href="${apple}">Apple Maps → GO</a>
+    `;
+  });
 
 });
+
+// ==== LOCATION BUTTON ====
+document.getElementById("locateBtn").onclick = () => {
+  map.locate({setView:true, maxZoom:14});
+
+  map.on("locationfound", e => {
+    L.marker(e.latlng).addTo(map)
+      .bindPopup("Siz shu yerdasiz").openPopup();
+  });
+};
+
 </script>
 
 </body>
 </html>
-```
