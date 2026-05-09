@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Manhattan Live Map</title>
+<title>Manhattan AI Pro Map</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
@@ -19,59 +19,72 @@ html,body{
   width:100%;
 }
 
-/* popup styling */
+/* BIG MARKERS */
+.big-marker{
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  border:3px solid #fff;
+  box-shadow:0 2px 10px rgba(0,0,0,0.35);
+}
+
+/* POPUP */
 .leaflet-popup-content{
   font-size:13px;
   line-height:1.4;
+  min-width:220px;
 }
 
-.name{
-  font-weight:700;
-  margin-bottom:4px;
+.title{
+  font-size:15px;
+  font-weight:800;
+  margin-bottom:5px;
 }
 
-/* GO button */
-.go-btn{
+.row{
+  margin:3px 0;
+  font-size:12px;
+  color:#333;
+}
+
+.badge{
   display:inline-block;
-  margin-top:6px;
-  padding:6px 10px;
+  padding:3px 8px;
+  border-radius:20px;
+  font-size:11px;
+  font-weight:700;
+  margin-top:5px;
+}
+
+.red{background:#fcebeb;color:#a32d2d;}
+.orange{background:#faeeda;color:#854f0b;}
+.green{background:#eaf3de;color:#2f6b12;}
+
+.go{
+  display:block;
+  margin-top:8px;
+  padding:8px;
   background:#1a73e8;
   color:#fff;
-  border-radius:6px;
-  font-size:12px;
+  text-align:center;
+  border-radius:8px;
+  font-weight:700;
   text-decoration:none;
 }
 
-/* legend */
-.legend{
-  position:fixed;
-  top:10px;
-  left:10px;
-  z-index:1000;
-  background:#fff;
-  padding:8px 10px;
-  border-radius:10px;
-  box-shadow:0 2px 10px rgba(0,0,0,0.15);
-  font-size:12px;
-}
-
-.dot{
-  width:8px;
-  height:8px;
-  border-radius:50%;
-  display:inline-block;
-  margin-right:5px;
+/* AI BOX */
+.ai{
+  margin-top:6px;
+  font-size:11px;
+  color:#555;
+  background:#f5f5f5;
+  padding:6px;
+  border-radius:6px;
 }
 </style>
 </head>
 
 <body>
-
-<div class="legend">
-<div><span class="dot" style="background:#e24b4a"></span>Juda band</div>
-<div><span class="dot" style="background:#ef9f27"></span>O‘rtacha</div>
-<div><span class="dot" style="background:#639922"></span>Kam band</div>
-</div>
 
 <div id="map"></div>
 
@@ -80,22 +93,61 @@ html,body{
 <script>
 
 // ================= DATA =================
-// busy level: red / orange / green
 const places = [
-{n:"Times Square",lat:40.7580,lng:-73.9855,l:"red"},
-{n:"Central Park",lat:40.7829,lng:-73.9654,l:"orange"},
-{n:"Wall Street",lat:40.7060,lng:-74.0086,l:"green"},
-{n:"5th Avenue",lat:40.7750,lng:-73.9655,l:"red"},
-{n:"Grand Central",lat:40.7527,lng:-73.9772,l:"orange"},
-{n:"Bryant Park",lat:40.7536,lng:-73.9832,l:"orange"},
-{n:"SoHo",lat:40.7233,lng:-74.0030,l:"orange"},
-{n:"Hudson Yards",lat:40.7540,lng:-74.0027,l:"orange"},
-{n:"High Line",lat:40.7479,lng:-74.0049,l:"orange"},
-{n:"Chinatown",lat:40.7158,lng:-73.9970,l:"orange"}
+{
+name:"Times Square",
+lat:40.7580,lng:-73.9855,
+schedule:`Du–Ju: 16:00–22:00<br>Sha–Yak: 14:00–23:00`
+},
+{
+name:"Central Park",
+lat:40.7829,lng:-73.9654,
+schedule:`Du–Ju: 07:00–10:00, 17:00–20:00<br>Sha–Yak: 10:00–18:00`
+},
+{
+name:"Wall Street",
+lat:40.7060,lng:-74.0086,
+schedule:`Du–Ju: 08:00–16:00<br>Weekend: juda kam odam`
+},
+{
+name:"5th Avenue",
+lat:40.7750,lng:-73.9655,
+schedule:`Du–Ju: 12:00–20:00<br>Sha–Yak: 11:00–21:00`
+},
+{
+name:"Grand Central",
+lat:40.7527,lng:-73.9772,
+schedule:`Du–Ju: 07:00–10:00, 16:00–19:00<br>Weekend: 11:00–17:00`
+},
+{
+name:"Bryant Park",
+lat:40.7536,lng:-73.9832,
+schedule:`Du–Ju: 12:00–14:00, 17:00–19:00<br>Weekend: 12:00–18:00`
+},
+{
+name:"SoHo",
+lat:40.7233,lng:-74.0030,
+schedule:`Du–Ju: 13:00–19:00<br>Weekend: 11:00–20:00`
+},
+{
+name:"Hudson Yards",
+lat:40.7540,lng:-74.0027,
+schedule:`Du–Ju: 12:00–20:00<br>Weekend: 11:00–21:00`
+},
+{
+name:"High Line",
+lat:40.7479,lng:-74.0049,
+schedule:`Du–Ju: 12:00–18:00<br>Weekend: 10:00–19:00`
+},
+{
+name:"Chinatown",
+lat:40.7158,lng:-73.9970,
+schedule:`Du–Ju: 12:00–19:00<br>Weekend: 11:00–21:00`
+}
 ];
 
-// colors
-const colors={
+// ================= COLORS =================
+const colors = {
 red:"#e24b4a",
 orange:"#ef9f27",
 green:"#639922"
@@ -108,81 +160,59 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
 attribution:false
 }).addTo(map);
 
-// ================= MARKERS =================
-places.forEach(p=>{
-
-const icon = L.divIcon({
-className:"",
-html:`<div style="
-width:14px;height:14px;
-border-radius:50%;
-background:${colors[p.l]};
-border:2px solid #fff;
-box-shadow:0 1px 6px rgba(0,0,0,0.3);
-"></div>`
-});
-
-const marker = L.marker([p.lat,p.lng],{icon}).addTo(map);
-
-// popup (minimal + fast)
-const google = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
-
-marker.bindPopup(`
-<div class="name">${p.n}</div>
-<div style="font-size:11px;color:#666;">
-Busy: ${p.l === "red" ? "Juda band" : p.l === "orange" ? "O‘rtacha" : "Kam band"}
-</div>
-<a class="go-btn" href="${google}" target="_blank">GO</a>
-`);
-
-});
-
-// ================= REAL TIME SIMULATION =================
-// (real API yo‘q, lekin live effect berildi)
-setInterval(()=>{
-
-places.forEach(p=>{
-const r = Math.random();
-
-if(r < 0.33) p.l="red";
-else if(r < 0.66) p.l="orange";
-else p.l="green";
-});
-
-map.eachLayer(layer=>{
-if(layer instanceof L.Marker){
-map.removeLayer(layer);
+// ================= AI LOGIC =================
+function aiAdvice(level){
+if(level==="red") return "⚠️ Hozir juda band — kechroq boring";
+if(level==="orange") return "🟡 O‘rtacha — borish mumkin";
+return "🟢 Eng yaxshi vaqt — hozir ideal";
 }
-});
 
-// redraw
+// ================= MARKERS =================
+function draw(){
+
 places.forEach(p=>{
+
+// fake realtime busy
+const r = Math.random();
+p.level = r<0.33?"red":r<0.66?"orange":"green";
 
 const icon = L.divIcon({
 className:"",
-html:`<div style="
-width:14px;height:14px;
-border-radius:50%;
-background:${colors[p.l]};
-border:2px solid #fff;
-"></div>`
+html:`<div class="big-marker" style="background:${colors[p.level]}"></div>`
 });
 
 const marker = L.marker([p.lat,p.lng],{icon}).addTo(map);
 
-const google = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
+const goLink = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
 
 marker.bindPopup(`
-<div class="name">${p.n}</div>
-<div style="font-size:11px;">
-Busy: ${p.l}
+<div class="title">${p.name}</div>
+
+<div class="row">${p.schedule}</div>
+
+<div class="badge ${p.level}">
+${p.level==="red"?"Juda band":p.level==="orange"?"O‘rtacha band":"Kam band"}
 </div>
-<a class="go-btn" href="${google}" target="_blank">GO</a>
+
+<div class="ai">${aiAdvice(p.level)}</div>
+
+<a class="go" href="${goLink}" target="_blank">GO</a>
 `);
 
 });
 
-},8000); // 8 sekundda update
+}
+
+// first render
+draw();
+
+// refresh “AI live”
+setInterval(()=>{
+map.eachLayer(l=>{
+if(l instanceof L.Marker) map.removeLayer(l);
+});
+draw();
+},8000);
 
 </script>
 
