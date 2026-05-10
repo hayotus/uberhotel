@@ -3,83 +3,87 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Manhattan AI Pro Map</title>
+<title>Manhattan Hotel Map</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
 <style>
-html,body{
-  margin:0;
-  height:100%;
-  font-family:system-ui,sans-serif;
+html, body {
+  margin: 0;
+  height: 100%;
+  font-family: system-ui, sans-serif;
 }
 
-#map{
-  height:100vh;
-  width:100%;
+#map {
+  height: 100vh;
+  width: 100%;
 }
 
-/* BIG MARKERS */
-.big-marker{
-  width:18px;
-  height:18px;
-  border-radius:50%;
-  border:3px solid #fff;
-  box-shadow:0 2px 10px rgba(0,0,0,0.35);
+.big-marker {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.35);
 }
 
-/* POPUP */
-.leaflet-popup-content{
-  font-size:13px;
-  line-height:1.4;
-  min-width:220px;
+.leaflet-popup-content {
+  font-size: 13px;
+  line-height: 1.4;
+  min-width: 220px;
 }
 
-.title{
-  font-size:15px;
-  font-weight:800;
-  margin-bottom:5px;
+.title {
+  font-size: 15px;
+  font-weight: 800;
+  margin-bottom: 5px;
 }
 
-.row{
-  margin:3px 0;
-  font-size:12px;
-  color:#333;
+.row {
+  margin: 3px 0;
+  font-size: 12px;
+  color: #333;
 }
 
-.badge{
-  display:inline-block;
-  padding:3px 8px;
-  border-radius:20px;
-  font-size:11px;
-  font-weight:700;
-  margin-top:5px;
+.badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 5px;
+  background: #eaf3de;
+  color: #2f6b12;
 }
 
-.red{background:#fcebeb;color:#a32d2d;}
-.orange{background:#faeeda;color:#854f0b;}
-.green{background:#eaf3de;color:#2f6b12;}
-
-.go{
-  display:block;
-  margin-top:8px;
-  padding:8px;
-  background:#1a73e8;
-  color:#fff;
-  text-align:center;
-  border-radius:8px;
-  font-weight:700;
-  text-decoration:none;
+.go {
+  display: block;
+  margin-top: 8px;
+  padding: 8px;
+  background: #1a73e8;
+  color: #fff;
+  text-align: center;
+  border-radius: 8px;
+  font-weight: 700;
+  text-decoration: none;
 }
 
-/* AI BOX */
-.ai{
-  margin-top:6px;
-  font-size:11px;
-  color:#555;
-  background:#f5f5f5;
-  padding:6px;
-  border-radius:6px;
+.go:hover {
+  background: #1558b0;
+}
+
+#status {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  z-index: 9999;
+  display: none;
 }
 </style>
 </head>
@@ -87,132 +91,144 @@ html,body{
 <body>
 
 <div id="map"></div>
+<div id="status">⏳ Nuqtalar yuklanmoqda...</div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
 
-// ================= DATA =================
-const places = [
-{
-name:"Times Square",
-lat:40.7580,lng:-73.9855,
-schedule:`Du–Ju: 16:00–22:00<br>Sha–Yak: 14:00–23:00`
-},
-{
-name:"Central Park",
-lat:40.7829,lng:-73.9654,
-schedule:`Du–Ju: 07:00–10:00, 17:00–20:00<br>Sha–Yak: 10:00–18:00`
-},
-{
-name:"Wall Street",
-lat:40.7060,lng:-74.0086,
-schedule:`Du–Ju: 08:00–16:00<br>Weekend: juda kam odam`
-},
-{
-name:"5th Avenue",
-lat:40.7750,lng:-73.9655,
-schedule:`Du–Ju: 12:00–20:00<br>Sha–Yak: 11:00–21:00`
-},
-{
-name:"Grand Central",
-lat:40.7527,lng:-73.9772,
-schedule:`Du–Ju: 07:00–10:00, 16:00–19:00<br>Weekend: 11:00–17:00`
-},
-{
-name:"Bryant Park",
-lat:40.7536,lng:-73.9832,
-schedule:`Du–Ju: 12:00–14:00, 17:00–19:00<br>Weekend: 12:00–18:00`
-},
-{
-name:"SoHo",
-lat:40.7233,lng:-74.0030,
-schedule:`Du–Ju: 13:00–19:00<br>Weekend: 11:00–20:00`
-},
-{
-name:"Hudson Yards",
-lat:40.7540,lng:-74.0027,
-schedule:`Du–Ju: 12:00–20:00<br>Weekend: 11:00–21:00`
-},
-{
-name:"High Line",
-lat:40.7479,lng:-74.0049,
-schedule:`Du–Ju: 12:00–18:00<br>Weekend: 10:00–19:00`
-},
-{
-name:"Chinatown",
-lat:40.7158,lng:-73.9970,
-schedule:`Du–Ju: 12:00–19:00<br>Weekend: 11:00–21:00`
-}
-];
+const MARKER_COLOR = "#639922"; // doim yashil — o'zgarmasin
 
-// ================= COLORS =================
-const colors = {
-red:"#e24b4a",
-orange:"#ef9f27",
-green:"#639922"
-};
+const map = L.map('map').setView([40.7400, -74.0000], 12);
 
-// ================= MAP =================
-const map = L.map('map').setView([40.7580,-73.9855],12);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-attribution:false
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: false
 }).addTo(map);
 
-// ================= AI LOGIC =================
-function aiAdvice(level){
-if(level==="red") return "⚠️ Hozir juda band — kechroq boring";
-if(level==="orange") return "🟡 O‘rtacha — borish mumkin";
-return "🟢 Eng yaxshi vaqt — hozir ideal";
+// GitHub raw URL (point.txt ni o'qish uchun)
+const RAW_URL = "https://raw.githubusercontent.com/hayotus/uberhotel/main/point.txt";
+
+function showStatus(msg) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.style.display = 'block';
 }
 
-// ================= MARKERS =================
-function draw(){
-
-places.forEach(p=>{
-
-// fake realtime busy
-const r = Math.random();
-p.level = r<0.33?"red":r<0.66?"orange":"green";
-
-const icon = L.divIcon({
-className:"",
-html:`<div class="big-marker" style="background:${colors[p.level]}"></div>`
-});
-
-const marker = L.marker([p.lat,p.lng],{icon}).addTo(map);
-
-const goLink = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
-
-marker.bindPopup(`
-<div class="title">${p.name}</div>
-
-<div class="row">${p.schedule}</div>
-
-<div class="badge ${p.level}">
-${p.level==="red"?"Juda band":p.level==="orange"?"O‘rtacha band":"Kam band"}
-</div>
-
-<div class="ai">${aiAdvice(p.level)}</div>
-
-<a class="go" href="${goLink}" target="_blank">GO</a>
-`);
-
-});
-
+function hideStatus() {
+  document.getElementById('status').style.display = 'none';
 }
 
-// first render
-draw();
+/*
+  point.txt formati (har bir qator):
+  A Office Mo-Fr 8:00-16:00 277 E 10th St, New York, NY 10009
+  B Hotel Mo-fr 9:00-12:00 342 W 40th St, New York, NY 10018
+  C Water st Mo-Fr 15:00-18:00 2 Water St, New York, NY 10004
 
-// refresh “AI live”
-setInterval(()=>{
-map.eachLayer(l=>{
-if(l instanceof L.Marker) map.removeLayer(l);
-});
-draw();
-},8000);
+  Parse: birinchi so'z = ID, ikkinchi so'z = Nom, uchinchi so'z = Kun, to'rtinchi = Vaqt, qolgan = Manzil
+  Keyin manzilni geocode qilamiz.
+*/
+
+function parseLine(line) {
+  line = line.trim();
+  if (!line) return null;
+
+  // Regex: ID (A/B/C), Name, Schedule (Mo-Fr HH:MM-HH:MM), Address (qolgan)
+  const m = line.match(/^(\S+)\s+(\S+)\s+(Mo-[Ff]r?\s+[\d:]+[-–][\d:]+)\s+(.+)$/i);
+  if (!m) return null;
+
+  return {
+    id: m[1],
+    name: m[2],
+    schedule: m[3].replace(/\s/, ' '),
+    address: m[4].trim()
+  };
+}
+
+async function geocode(address) {
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`;
+  const res = await fetch(url, { headers: { 'User-Agent': 'hotel-map-app' } });
+  const data = await res.json();
+  if (data && data[0]) {
+    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+  }
+  return null;
+}
+
+function addMarker(place, coords) {
+  const icon = L.divIcon({
+    className: "",
+    html: `<div class="big-marker" style="background:${MARKER_COLOR}"></div>`
+  });
+
+  const marker = L.marker([coords.lat, coords.lng], { icon }).addTo(map);
+
+  const goLink = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(place.address)}`;
+
+  marker.bindPopup(`
+    <div class="title">${place.id} — ${place.name}</div>
+    <div class="row">📍 ${place.address}</div>
+    <div class="row">🕐 ${place.schedule}</div>
+    <div class="badge">🟢 Faol nuqta</div>
+    <a class="go" href="${goLink}" target="_blank">GO →</a>
+  `);
+}
+
+async function loadAndDraw() {
+  showStatus('⏳ point.txt yuklanmoqda...');
+
+  let text;
+  try {
+    // GitHub raw ni to'g'ridan proxy orqali o'qish
+    const res = await fetch(RAW_URL + '?t=' + Date.now());
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    text = await res.text();
+  } catch (e) {
+    // CORS muammo bo'lsa, allOrigins proxy orqali urinib ko'ramiz
+    try {
+      const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(RAW_URL)}`;
+      const res2 = await fetch(proxy);
+      const json = await res2.json();
+      text = json.contents;
+    } catch (e2) {
+      showStatus('❌ Fayl yuklanmadi. Tarmoq xatoligi.');
+      return;
+    }
+  }
+
+  const lines = text.split('\n').filter(l => l.trim());
+  const places = lines.map(parseLine).filter(Boolean);
+
+  if (places.length === 0) {
+    showStatus('❌ Nuqtalar topilmadi.');
+    return;
+  }
+
+  showStatus(`📍 ${places.length} ta nuqta geocode qilinmoqda...`);
+
+  const coordsList = [];
+
+  for (const place of places) {
+    const coords = await geocode(place.address);
+    if (coords) {
+      addMarker(place, coords);
+      coordsList.push(coords);
+    } else {
+      console.warn('Geocode topilmadi:', place.address);
+    }
+    // Nominatim rate limit uchun kichik kutish
+    await new Promise(r => setTimeout(r, 500));
+  }
+
+  if (coordsList.length > 0) {
+    // Barcha markerlarni ekranga sig'dirish
+    const bounds = L.latLngBounds(coordsList.map(c => [c.lat, c.lng]));
+    map.fitBounds(bounds, { padding: [60, 60] });
+  }
+
+  hideStatus();
+}
+
+loadAndDraw();
 
 </script>
 
