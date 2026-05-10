@@ -6,7 +6,6 @@ E	Penn Station	Mo-Fr	9:00-12:00	8th Ave & W 31st St, New York, NY 10001
 F	Grand Central Terminal	Mo-Fr	15:00-18:00	89 E 42nd St, New York, NY 10017		
 G	Port Authority Bus Terminal	Mo-Fr	8:00-16:00	625 8th Ave, New York, NY 10018		
 H	Hudson Yards	Mo-Fr	9:00-12:00	20 Hudson Yards, New York, NY 10001		
-I	Wall Street	Mo-Fr	15:00-18:00	Wall St & Broad St, New York, NY 10005		
 J	SoHo	Mo-Fr	8:00-16:00	Spring St & Broadway, New York, NY 10012		
 K	Lower East Side	Mo-Fr	9:00-12:00	Orchard St & Delancey St, New York, NY 10002		
 L	Upper East Side	Mo-Fr	15:00-18:00	2nd Ave & E 86th St, New York, NY 10028		
