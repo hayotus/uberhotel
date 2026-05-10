@@ -3,234 +3,189 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Manhattan Hotel Map</title>
-
+<title>Hotel Map</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-
 <style>
-html, body {
-  margin: 0;
-  height: 100%;
-  font-family: system-ui, sans-serif;
-}
-
-#map {
-  height: 100vh;
-  width: 100%;
-}
+html, body { margin: 0; height: 100%; font-family: system-ui, sans-serif; }
+#map { height: 100vh; width: 100%; }
 
 .big-marker {
-  width: 18px;
-  height: 18px;
+  width: 20px; height: 20px;
   border-radius: 50%;
   border: 3px solid #fff;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+  background: #639922;
 }
 
-.leaflet-popup-content {
-  font-size: 13px;
-  line-height: 1.4;
-  min-width: 220px;
+.leaflet-popup-content { min-width: 230px; font-size: 13px; line-height: 1.5; }
+.ptitle { font-size: 15px; font-weight: 800; margin-bottom: 4px; }
+.prow { font-size: 12px; color: #444; margin: 2px 0; }
+.pbadge {
+  display: inline-block; padding: 3px 9px; border-radius: 20px;
+  font-size: 11px; font-weight: 700; margin-top: 4px;
+  background: #eaf3de; color: #2f6b12;
 }
-
-.title {
-  font-size: 15px;
-  font-weight: 800;
-  margin-bottom: 5px;
+.pgo {
+  display: block; margin-top: 8px; padding: 8px;
+  background: #1a73e8; color: #fff; text-align: center;
+  border-radius: 8px; font-weight: 700; text-decoration: none;
 }
+.pgo:hover { background: #1558b0; }
 
-.row {
-  margin: 3px 0;
-  font-size: 12px;
-  color: #333;
-}
-
-.badge {
-  display: inline-block;
-  padding: 3px 8px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 700;
-  margin-top: 5px;
-  background: #eaf3de;
-  color: #2f6b12;
-}
-
-.go {
-  display: block;
-  margin-top: 8px;
-  padding: 8px;
-  background: #1a73e8;
-  color: #fff;
-  text-align: center;
-  border-radius: 8px;
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.go:hover {
-  background: #1558b0;
-}
-
-#status {
-  position: fixed;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0,0,0,0.7);
-  color: #fff;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 12px;
-  z-index: 9999;
-  display: none;
+#statusbar {
+  position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+  background: rgba(20,20,20,0.82); color: #fff;
+  padding: 7px 18px; border-radius: 24px;
+  font-size: 12px; z-index: 9999;
+  display: none; white-space: nowrap;
+  backdrop-filter: blur(4px);
 }
 </style>
 </head>
-
 <body>
 
 <div id="map"></div>
-<div id="status">⏳ Nuqtalar yuklanmoqda...</div>
+<div id="statusbar"></div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
 <script>
+// ─── CONFIG ───────────────────────────────────────────────
+const RAW_URL    = "https://raw.githubusercontent.com/hayotus/uberhotel/main/point.txt";
+const PROXY_URL  = "https://api.allorigins.win/get?url=" + encodeURIComponent(RAW_URL);
+const CACHE_KEY  = "hotel_geo_cache_v1";
+const MARKER_BG  = "#639922";
 
-const MARKER_COLOR = "#639922"; // doim yashil — o'zgarmasin
-
-const map = L.map('map').setView([40.7400, -74.0000], 12);
-
+// ─── MAP ──────────────────────────────────────────────────
+const map = L.map('map').setView([40.745, -73.995], 12);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: false
 }).addTo(map);
 
-// GitHub raw URL (point.txt ni o'qish uchun)
-const RAW_URL = "https://raw.githubusercontent.com/hayotus/uberhotel/main/point.txt";
-
-function showStatus(msg) {
-  const el = document.getElementById('status');
+// ─── STATUS ───────────────────────────────────────────────
+function setStatus(msg, autoHide) {
+  const el = document.getElementById('statusbar');
   el.textContent = msg;
   el.style.display = 'block';
+  if (autoHide) setTimeout(() => { el.style.display = 'none'; }, 2500);
 }
 
-function hideStatus() {
-  document.getElementById('status').style.display = 'none';
+// ─── GEOCODE CACHE (localStorage) ─────────────────────────
+function loadCache() {
+  try { return JSON.parse(localStorage.getItem(CACHE_KEY) || '{}'); }
+  catch { return {}; }
+}
+function saveCache(cache) {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify(cache)); }
+  catch {}
 }
 
-/*
-  point.txt formati (har bir qator):
-  A Office Mo-Fr 8:00-16:00 277 E 10th St, New York, NY 10009
-  B Hotel Mo-fr 9:00-12:00 342 W 40th St, New York, NY 10018
-  C Water st Mo-Fr 15:00-18:00 2 Water St, New York, NY 10004
-
-  Parse: birinchi so'z = ID, ikkinchi so'z = Nom, uchinchi so'z = Kun, to'rtinchi = Vaqt, qolgan = Manzil
-  Keyin manzilni geocode qilamiz.
-*/
-
+// ─── PARSE LINE ───────────────────────────────────────────
+// "A Office Mo-Fr 8:00-16:00 277 E 10th St, New York, NY 10009"
 function parseLine(line) {
   line = line.trim();
   if (!line) return null;
-
-  // Regex: ID (A/B/C), Name, Schedule (Mo-Fr HH:MM-HH:MM), Address (qolgan)
-  const m = line.match(/^(\S+)\s+(\S+)\s+(Mo-[Ff]r?\s+[\d:]+[-–][\d:]+)\s+(.+)$/i);
+  const m = line.match(/^(\S+)\s+(\S+)\s+(Mo-[Ff]r?\s+[\d:]+\s*[-\u2013]\s*[\d:]+)\s+(.+)$/i);
   if (!m) return null;
-
   return {
-    id: m[1],
-    name: m[2],
-    schedule: m[3].replace(/\s/, ' '),
-    address: m[4].trim()
+    id:       m[1],
+    name:     m[2],
+    schedule: m[3].trim(),
+    address:  m[4].trim()
   };
 }
 
+// ─── GEOCODE ──────────────────────────────────────────────
 async function geocode(address) {
-  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`;
-  const res = await fetch(url, { headers: { 'User-Agent': 'hotel-map-app' } });
-  const data = await res.json();
-  if (data && data[0]) {
-    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-  }
+  const url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" +
+              encodeURIComponent(address);
+  try {
+    const r = await fetch(url, { headers: { 'User-Agent': 'hotel-map-app' } });
+    const d = await r.json();
+    if (d && d[0]) return { lat: +d[0].lat, lng: +d[0].lon };
+  } catch {}
   return null;
 }
 
+// ─── ADD MARKER ───────────────────────────────────────────
 function addMarker(place, coords) {
   const icon = L.divIcon({
     className: "",
-    html: `<div class="big-marker" style="background:${MARKER_COLOR}"></div>`
+    html: '<div class="big-marker"></div>',
+    iconSize:   [20, 20],
+    iconAnchor: [10, 10]
   });
-
   const marker = L.marker([coords.lat, coords.lng], { icon }).addTo(map);
-
-  const goLink = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(place.address)}`;
-
-  marker.bindPopup(`
-    <div class="title">${place.id} — ${place.name}</div>
-    <div class="row">📍 ${place.address}</div>
-    <div class="row">🕐 ${place.schedule}</div>
-    <div class="badge">🟢 Faol nuqta</div>
-    <a class="go" href="${goLink}" target="_blank">GO →</a>
-  `);
+  const goLink = "https://www.google.com/maps/dir/?api=1&destination=" +
+                 encodeURIComponent(place.address);
+  marker.bindPopup(
+    '<div class="ptitle">' + place.id + ' \u2014 ' + place.name + '</div>' +
+    '<div class="prow">\uD83D\uDCCD ' + place.address + '</div>' +
+    '<div class="prow">\uD83D\uDD50 ' + place.schedule + '</div>' +
+    '<div class="pbadge">\uD83D\uDFE2 Faol nuqta</div>' +
+    '<a class="pgo" href="' + goLink + '" target="_blank">GO &rarr;</a>'
+  );
 }
 
+// ─── MAIN ─────────────────────────────────────────────────
 async function loadAndDraw() {
-  showStatus('⏳ point.txt yuklanmoqda...');
+  setStatus('\u23F3 point.txt yuklanmoqda...');
 
-  let text;
+  // 1. Fetch
+  let text = null;
   try {
-    // GitHub raw ni to'g'ridan proxy orqali o'qish
-    const res = await fetch(RAW_URL + '?t=' + Date.now());
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    text = await res.text();
-  } catch (e) {
-    // CORS muammo bo'lsa, allOrigins proxy orqali urinib ko'ramiz
+    const r = await fetch(RAW_URL + '?nc=' + Date.now());
+    if (r.ok) text = await r.text();
+  } catch {}
+
+  if (!text) {
     try {
-      const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(RAW_URL)}`;
-      const res2 = await fetch(proxy);
-      const json = await res2.json();
-      text = json.contents;
-    } catch (e2) {
-      showStatus('❌ Fayl yuklanmadi. Tarmoq xatoligi.');
-      return;
+      const r = await fetch(PROXY_URL);
+      const j = await r.json();
+      text = j.contents;
+    } catch {}
+  }
+
+  if (!text) { setStatus('\u274C Fayl yuklanmadi'); return; }
+
+  // 2. Parse
+  const places = text.split('\n').map(parseLine).filter(Boolean);
+  if (!places.length) { setStatus('\u274C Nuqtalar topilmadi'); return; }
+
+  // 3. Geocode with cache
+  const cache = loadCache();
+  const coords = [];
+  let newCount = 0;
+
+  for (let i = 0; i < places.length; i++) {
+    const p   = places[i];
+    const key = p.address.toLowerCase();
+    let   c   = cache[key] || null;
+
+    if (!c) {
+      setStatus('\uD83D\uDCCD Geocode: ' + p.name + ' (' + (i+1) + '/' + places.length + ')');
+      c = await geocode(p.address);
+      if (c) { cache[key] = c; newCount++; }
+      await new Promise(r => setTimeout(r, 1100)); // Nominatim 1 req/s
     }
+
+    if (c) { addMarker(p, c); coords.push(c); }
+    else    { console.warn('Geocode topilmadi:', p.address); }
   }
 
-  const lines = text.split('\n').filter(l => l.trim());
-  const places = lines.map(parseLine).filter(Boolean);
+  if (newCount > 0) saveCache(cache);
 
-  if (places.length === 0) {
-    showStatus('❌ Nuqtalar topilmadi.');
-    return;
+  // 4. Fit map
+  if (coords.length) {
+    map.fitBounds(
+      L.latLngBounds(coords.map(c => [c.lat, c.lng])),
+      { padding: [60, 60] }
+    );
   }
 
-  showStatus(`📍 ${places.length} ta nuqta geocode qilinmoqda...`);
-
-  const coordsList = [];
-
-  for (const place of places) {
-    const coords = await geocode(place.address);
-    if (coords) {
-      addMarker(place, coords);
-      coordsList.push(coords);
-    } else {
-      console.warn('Geocode topilmadi:', place.address);
-    }
-    // Nominatim rate limit uchun kichik kutish
-    await new Promise(r => setTimeout(r, 500));
-  }
-
-  if (coordsList.length > 0) {
-    // Barcha markerlarni ekranga sig'dirish
-    const bounds = L.latLngBounds(coordsList.map(c => [c.lat, c.lng]));
-    map.fitBounds(bounds, { padding: [60, 60] });
-  }
-
-  hideStatus();
+  setStatus('\u2705 ' + places.length + ' ta nuqta yuklandi', true);
 }
 
 loadAndDraw();
-
 </script>
-
 </body>
 </html>
