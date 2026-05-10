@@ -9,12 +9,15 @@
 html, body { margin: 0; height: 100%; font-family: system-ui, sans-serif; }
 #map { height: 100vh; width: 100%; }
 
-.big-marker {
-  width: 20px; height: 20px;
+.letter-marker {
+  width: 28px; height: 28px;
   border-radius: 50%;
   border: 3px solid #fff;
   box-shadow: 0 2px 10px rgba(0,0,0,0.4);
   background: #639922;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 900; color: #fff;
+  line-height: 1;
 }
 
 .leaflet-popup-content { min-width: 230px; font-size: 13px; line-height: 1.5; }
@@ -34,11 +37,10 @@ html, body { margin: 0; height: 100%; font-family: system-ui, sans-serif; }
 
 #statusbar {
   position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
-  background: rgba(20,20,20,0.82); color: #fff;
-  padding: 7px 18px; border-radius: 24px;
-  font-size: 12px; z-index: 9999;
+  background: rgba(20,20,20,0.85); color: #fff;
+  padding: 8px 20px; border-radius: 24px;
+  font-size: 13px; z-index: 9999;
   display: none; white-space: nowrap;
-  backdrop-filter: blur(4px);
 }
 </style>
 </head>
@@ -49,52 +51,44 @@ html, body { margin: 0; height: 100%; font-family: system-ui, sans-serif; }
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-// ─── CONFIG ───────────────────────────────────────────────
-const RAW_URL    = "https://raw.githubusercontent.com/hayotus/uberhotel/main/point.txt";
-const PROXY_URL  = "https://api.allorigins.win/get?url=" + encodeURIComponent(RAW_URL);
-const CACHE_KEY  = "hotel_geo_cache_v1";
-const MARKER_BG  = "#639922";
+const RAW_URL   = "https://raw.githubusercontent.com/hayotus/uberhotel/main/point.txt";
+const PROXY_URL = "https://api.allorigins.win/get?url=" + encodeURIComponent(RAW_URL);
+const CACHE_KEY = "hotel_geo_v2";
 
-// ─── MAP ──────────────────────────────────────────────────
 const map = L.map('map').setView([40.745, -73.995], 12);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: false
-}).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: false }).addTo(map);
 
-// ─── STATUS ───────────────────────────────────────────────
-function setStatus(msg, autoHide) {
+function setStatus(msg, hide) {
   const el = document.getElementById('statusbar');
   el.textContent = msg;
   el.style.display = 'block';
-  if (autoHide) setTimeout(() => { el.style.display = 'none'; }, 2500);
+  if (hide) setTimeout(() => el.style.display = 'none', 2500);
 }
 
-// ─── GEOCODE CACHE (localStorage) ─────────────────────────
 function loadCache() {
-  try { return JSON.parse(localStorage.getItem(CACHE_KEY) || '{}'); }
-  catch { return {}; }
+  try { return JSON.parse(localStorage.getItem(CACHE_KEY) || '{}'); } catch { return {}; }
 }
-function saveCache(cache) {
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify(cache)); }
-  catch {}
+function saveCache(c) {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify(c)); } catch {}
 }
 
-// ─── PARSE LINE ───────────────────────────────────────────
-// "A Office Mo-Fr 8:00-16:00 277 E 10th St, New York, NY 10009"
+// Tab bilan ajratilgan format:
+// A \t Office \t Mo-Fr \t 8:00-16:00 \t 277 E 10th St, New York, NY 10009
 function parseLine(line) {
   line = line.trim();
   if (!line) return null;
-  const m = line.match(/^(\S+)\s+(\S+)\s+(Mo-[Ff]r?\s+[\d:]+\s*[-\u2013]\s*[\d:]+)\s+(.+)$/i);
-  if (!m) return null;
+  const parts = line.split('\t').map(s => s.trim()).filter(s => s.length > 0);
+  // Minimum 5 ta ustun kerak: ID, Name, Days, Time, Address
+  if (parts.length < 5) return null;
   return {
-    id:       m[1],
-    name:     m[2],
-    schedule: m[3].trim(),
-    address:  m[4].trim()
+    id:       parts[0],           // A, B, C ...
+    name:     parts[1],           // Office, Hotel ...
+    days:     parts[2],           // Mo-Fr
+    time:     parts[3],           // 8:00-16:00
+    address:  parts[4]            // 277 E 10th St ...
   };
 }
 
-// ─── GEOCODE ──────────────────────────────────────────────
 async function geocode(address) {
   const url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" +
               encodeURIComponent(address);
@@ -106,31 +100,28 @@ async function geocode(address) {
   return null;
 }
 
-// ─── ADD MARKER ───────────────────────────────────────────
 function addMarker(place, coords) {
   const icon = L.divIcon({
     className: "",
-    html: '<div class="big-marker"></div>',
-    iconSize:   [20, 20],
-    iconAnchor: [10, 10]
+    html: '<div class="letter-marker">' + place.id + '</div>',
+    iconSize:   [28, 28],
+    iconAnchor: [14, 14]
   });
   const marker = L.marker([coords.lat, coords.lng], { icon }).addTo(map);
   const goLink = "https://www.google.com/maps/dir/?api=1&destination=" +
                  encodeURIComponent(place.address);
   marker.bindPopup(
-    '<div class="ptitle">' + place.id + ' \u2014 ' + place.name + '</div>' +
-    '<div class="prow">\uD83D\uDCCD ' + place.address + '</div>' +
-    '<div class="prow">\uD83D\uDD50 ' + place.schedule + '</div>' +
-    '<div class="pbadge">\uD83D\uDFE2 Faol nuqta</div>' +
-    '<a class="pgo" href="' + goLink + '" target="_blank">GO &rarr;</a>'
+    '<div class="ptitle">' + place.id + ' — ' + place.name + '</div>' +
+    '<div class="prow">📍 ' + place.address + '</div>' +
+    '<div class="prow">📅 ' + place.days + ' &nbsp; 🕐 ' + place.time + '</div>' +
+    '<div class="pbadge">🟢 Faol nuqta</div>' +
+    '<a class="pgo" href="' + goLink + '" target="_blank">GO →</a>'
   );
 }
 
-// ─── MAIN ─────────────────────────────────────────────────
 async function loadAndDraw() {
-  setStatus('\u23F3 point.txt yuklanmoqda...');
+  setStatus('⏳ point.txt yuklanmoqda...');
 
-  // 1. Fetch
   let text = null;
   try {
     const r = await fetch(RAW_URL + '?nc=' + Date.now());
@@ -145,15 +136,15 @@ async function loadAndDraw() {
     } catch {}
   }
 
-  if (!text) { setStatus('\u274C Fayl yuklanmadi'); return; }
+  if (!text) { setStatus('❌ Fayl yuklanmadi'); return; }
 
-  // 2. Parse
   const places = text.split('\n').map(parseLine).filter(Boolean);
-  if (!places.length) { setStatus('\u274C Nuqtalar topilmadi'); return; }
+  if (!places.length) { setStatus('❌ Nuqtalar topilmadi'); return; }
 
-  // 3. Geocode with cache
+  setStatus('📍 ' + places.length + ' ta nuqta topildi, joylashuvlar aniqlanmoqda...');
+
   const cache = loadCache();
-  const coords = [];
+  const allCoords = [];
   let newCount = 0;
 
   for (let i = 0; i < places.length; i++) {
@@ -162,27 +153,26 @@ async function loadAndDraw() {
     let   c   = cache[key] || null;
 
     if (!c) {
-      setStatus('\uD83D\uDCCD Geocode: ' + p.name + ' (' + (i+1) + '/' + places.length + ')');
+      setStatus('📍 ' + p.id + ' — ' + p.name + ' (' + (i+1) + '/' + places.length + ')');
       c = await geocode(p.address);
       if (c) { cache[key] = c; newCount++; }
-      await new Promise(r => setTimeout(r, 1100)); // Nominatim 1 req/s
+      await new Promise(r => setTimeout(r, 1100));
     }
 
-    if (c) { addMarker(p, c); coords.push(c); }
-    else    { console.warn('Geocode topilmadi:', p.address); }
+    if (c) { addMarker(p, c); allCoords.push(c); }
+    else   { console.warn('Geocode topilmadi:', p.address); }
   }
 
   if (newCount > 0) saveCache(cache);
 
-  // 4. Fit map
-  if (coords.length) {
+  if (allCoords.length) {
     map.fitBounds(
-      L.latLngBounds(coords.map(c => [c.lat, c.lng])),
+      L.latLngBounds(allCoords.map(c => [c.lat, c.lng])),
       { padding: [60, 60] }
     );
   }
 
-  setStatus('\u2705 ' + places.length + ' ta nuqta yuklandi', true);
+  setStatus('✅ ' + allCoords.length + ' ta nuqta ko\'rsatildi', true);
 }
 
 loadAndDraw();
