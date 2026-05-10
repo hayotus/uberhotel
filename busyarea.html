@@ -51,9 +51,32 @@ html, body { margin: 0; height: 100%; font-family: system-ui, sans-serif; }
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-const RAW_URL   = "https://raw.githubusercontent.com/hayotus/uberhotel/main/point.txt";
-const PROXY_URL = "https://api.allorigins.win/get?url=" + encodeURIComponent(RAW_URL);
-const CACHE_KEY = "hotel_geo_v2";
+
+// ═══════════════════════════════════════════════════════════
+//  MANZILLAR RO'YHATI — yangi qo'shish uchun quyidagi
+//  formatda bir qator qo'shing:
+//  { id:"N", name:"Nom", days:"Mo-Fr", time:"9:00-18:00", address:"Manzil, New York, NY XXXXX" },
+// ═══════════════════════════════════════════════════════════
+const PLACES = [
+  { id:"A", name:"Office",                      days:"Mo-Fr", time:"8:00-16:00",  address:"277 E 10th St, New York, NY 10009" },
+  { id:"B", name:"Hotel",                       days:"Mo-Fr", time:"9:00-12:00",  address:"342 W 40th St, New York, NY 10018" },
+  { id:"C", name:"Water st",                    days:"Mo-Fr", time:"15:00-18:00", address:"2 Water St, New York, NY 10004" },
+  { id:"D", name:"Times Square",                days:"Mo-Fr", time:"8:00-16:00",  address:"42 W 40th St, New York, NY 10018" },
+  { id:"E", name:"Penn Station",                days:"Mo-Fr", time:"9:00-12:00",  address:"8th Ave & W 31st St, New York, NY 10001" },
+  { id:"F", name:"Grand Central Terminal",      days:"Mo-Fr", time:"15:00-18:00", address:"89 E 42nd St, New York, NY 10017" },
+  { id:"G", name:"Port Authority Bus Terminal", days:"Mo-Fr", time:"8:00-16:00",  address:"625 8th Ave, New York, NY 10018" },
+  { id:"H", name:"Hudson Yards",                days:"Mo-Fr", time:"9:00-12:00",  address:"20 Hudson Yards, New York, NY 10001" },
+  { id:"I", name:"Wall Street",                 days:"Mo-Fr", time:"15:00-18:00", address:"Wall St & Broad St, New York, NY 10005" },
+  { id:"J", name:"SoHo",                        days:"Mo-Fr", time:"8:00-16:00",  address:"Spring St & Broadway, New York, NY 10012" },
+  { id:"K", name:"Lower East Side",             days:"Mo-Fr", time:"9:00-12:00",  address:"Orchard St & Delancey St, New York, NY 10002" },
+  { id:"L", name:"Upper East Side",             days:"Mo-Fr", time:"15:00-18:00", address:"2nd Ave & E 86th St, New York, NY 10028" },
+  { id:"M", name:"Central Park South",          days:"Mo-Fr", time:"15:00-18:00", address:"59th St & 5th Ave, New York, NY 10019" },
+  // Yangi manzil qo'shish uchun yuqoridagi qatorni nusxalab, id/name/address ni o'zgartiring:
+  // { id:"N", name:"Yangi joy", days:"Mo-Fr", time:"9:00-17:00", address:"... New York, NY XXXXX" },
+];
+// ═══════════════════════════════════════════════════════════
+
+const CACHE_KEY = "hotel_geo_v3";
 
 const map = L.map('map').setView([40.745, -73.995], 12);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: false }).addTo(map);
@@ -70,23 +93,6 @@ function loadCache() {
 }
 function saveCache(c) {
   try { localStorage.setItem(CACHE_KEY, JSON.stringify(c)); } catch {}
-}
-
-// Tab bilan ajratilgan format:
-// A \t Office \t Mo-Fr \t 8:00-16:00 \t 277 E 10th St, New York, NY 10009
-function parseLine(line) {
-  line = line.trim();
-  if (!line) return null;
-  const parts = line.split('\t').map(s => s.trim()).filter(s => s.length > 0);
-  // Minimum 5 ta ustun kerak: ID, Name, Days, Time, Address
-  if (parts.length < 5) return null;
-  return {
-    id:       parts[0],           // A, B, C ...
-    name:     parts[1],           // Office, Hotel ...
-    days:     parts[2],           // Mo-Fr
-    time:     parts[3],           // 8:00-16:00
-    address:  parts[4]            // 277 E 10th St ...
-  };
 }
 
 async function geocode(address) {
@@ -119,41 +125,20 @@ function addMarker(place, coords) {
   );
 }
 
-async function loadAndDraw() {
-  setStatus('⏳ point.txt yuklanmoqda...');
-
-  let text = null;
-  try {
-    const r = await fetch(RAW_URL + '?nc=' + Date.now());
-    if (r.ok) text = await r.text();
-  } catch {}
-
-  if (!text) {
-    try {
-      const r = await fetch(PROXY_URL);
-      const j = await r.json();
-      text = j.contents;
-    } catch {}
-  }
-
-  if (!text) { setStatus('❌ Fayl yuklanmadi'); return; }
-
-  const places = text.split('\n').map(parseLine).filter(Boolean);
-  if (!places.length) { setStatus('❌ Nuqtalar topilmadi'); return; }
-
-  setStatus('📍 ' + places.length + ' ta nuqta topildi, joylashuvlar aniqlanmoqda...');
+async function draw() {
+  setStatus('⏳ Joylashuvlar aniqlanmoqda...');
 
   const cache = loadCache();
   const allCoords = [];
   let newCount = 0;
 
-  for (let i = 0; i < places.length; i++) {
-    const p   = places[i];
+  for (let i = 0; i < PLACES.length; i++) {
+    const p   = PLACES[i];
     const key = p.address.toLowerCase();
     let   c   = cache[key] || null;
 
     if (!c) {
-      setStatus('📍 ' + p.id + ' — ' + p.name + ' (' + (i+1) + '/' + places.length + ')');
+      setStatus('📍 ' + p.id + ' — ' + p.name + ' (' + (i+1) + '/' + PLACES.length + ')');
       c = await geocode(p.address);
       if (c) { cache[key] = c; newCount++; }
       await new Promise(r => setTimeout(r, 1100));
@@ -175,7 +160,7 @@ async function loadAndDraw() {
   setStatus('✅ ' + allCoords.length + ' ta nuqta ko\'rsatildi', true);
 }
 
-loadAndDraw();
+draw();
 </script>
 </body>
 </html>
